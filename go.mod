@@ -2,7 +2,12 @@ module pricetracker
 
 go 1.20
 
-require github.com/kataras/iris/v12 v12.2.0
+require (
+	github.com/kataras/iris/v12 v12.2.0
+	github.com/uptrace/bun v1.1.14
+	github.com/uptrace/bun/dialect/pgdialect v1.1.14
+	github.com/uptrace/bun/driver/pgdriver v1.1.14
+)
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
@@ -36,9 +41,6 @@ require (
 	github.com/tdewolff/minify/v2 v2.12.4 // indirect
 	github.com/tdewolff/parse/v2 v2.6.4 // indirect
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
-	github.com/uptrace/bun v1.1.14 // indirect
-	github.com/uptrace/bun/dialect/pgdialect v1.1.14 // indirect
-	github.com/uptrace/bun/driver/pgdriver v1.1.14 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect

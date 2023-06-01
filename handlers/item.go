@@ -9,8 +9,6 @@ import (
 )
 
 func GetItem(ctx iris.Context) {
-    models.InitItem(ctx)
-
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
@@ -27,8 +25,7 @@ func GetItem(ctx iris.Context) {
 }
 
 func CreateItem(ctx iris.Context) {
-    models.InitItem(ctx)
-
+    // TODO: verify if this works
     var item models.Item
     err := ctx.ReadJSON(&item)
     if err != nil {
@@ -37,12 +34,15 @@ func CreateItem(ctx iris.Context) {
         return
     }
 
+    for _, v := range item.Merchants {
+        models.CreateMerchant(v, ctx)
+	}
+
+
     ctx.JSON(models.CreateItem(&item, ctx))
 }
 
 func UpdateItem(ctx iris.Context) {
-    models.InitItem(ctx)
-
     var item models.Item
     err := ctx.ReadJSON(&item)
     if err != nil {
@@ -55,8 +55,6 @@ func UpdateItem(ctx iris.Context) {
 }
 
 func DeleteItem(ctx iris.Context) {
-    models.InitItem(ctx)
-
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().

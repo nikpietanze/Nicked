@@ -44,13 +44,13 @@ func CreateItem(item *Item, ctx iris.Context) int64 {
     item.Name = strings.Title(item.Name)
 
     res, err := db.Client.NewInsert().
-        Model(&item).
+        Model(item).
+        Returning("id").
         Exec(ctx)
     if err != nil {
         panic(err)
     }
 
-    // TODO: get inserted id
     id, err := res.LastInsertId()
     if err != nil {
         panic(err)
@@ -63,10 +63,11 @@ func UpdateItem(item *Item, ctx iris.Context) int64 {
     item.UpdatedAt = time.Now()
 
     res, err := db.Client.NewUpdate().
-        Model(&item).
+        Model(item).
         Column("name", "updated_at").
         OmitZero().
         WherePK().
+        Returning("id").
         Exec(ctx)
     if err != nil {
         panic(err)

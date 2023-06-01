@@ -2,17 +2,13 @@ package handlers
 
 import (
 	"strconv"
-	"time"
 
 	"github.com/kataras/iris/v12"
 
-	"pricetracker/db"
 	"pricetracker/models"
 )
 
 func GetPrice(ctx iris.Context) {
-    models.InitPrice(ctx)
-
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
@@ -20,26 +16,15 @@ func GetPrice(ctx iris.Context) {
         return
     }
 
-    id, err := strconv.Atoi(strId)
+    id, err := strconv.ParseInt(strId, 10, 64)
     if err != nil {
         panic(err)
     }
 
-    price := new(models.Price)
-    err = db.Client.NewSelect().
-        Model(&price).
-        Where("id = ?", id).
-        Scan(ctx)
-    if err != nil {
-        panic(err)
-    }
-
-    ctx.JSON(price)
+    ctx.JSON(models.GetPrice(&id, ctx))
 }
 
 func CreatePrice(ctx iris.Context) {
-    models.InitPrice(ctx)
-
     var price models.Price
     err := ctx.ReadJSON(&price)
     if err != nil {
@@ -48,19 +33,10 @@ func CreatePrice(ctx iris.Context) {
         return
     }
 
-    res, err := db.Client.NewInsert().
-        Model(&price).
-        Exec(ctx)
-    if err != nil {
-        panic(err)
-    }
-
-    ctx.JSON(res)
+    ctx.JSON(models.CreatePrice(&price, ctx))
 }
 
 func UpdatePrice(ctx iris.Context) {
-    models.InitPrice(ctx)
-
     var price models.Price
     err := ctx.ReadJSON(&price)
     if err != nil {
@@ -69,29 +45,10 @@ func UpdatePrice(ctx iris.Context) {
         return
     }
 
-    price.UpdatedAt = time.Now()
-
-    res, err := db.Client.NewUpdate().
-        Model(&price).
-        Column("name", "updated_at").
-        OmitZero().
-        WherePK().
-        Exec(ctx)
-    if err != nil {
-        panic(err)
-    }
-
-    id, err := res.LastInsertId()
-    if err != nil {
-        panic(err)
-    }
-
-    ctx.JSON(id)
+    ctx.JSON(models.UpdatePrice(&price, ctx))
 }
 
 func DeletePrice(ctx iris.Context) {
-    models.InitPrice(ctx)
-
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
@@ -99,22 +56,10 @@ func DeletePrice(ctx iris.Context) {
         return
     }
 
-    id, err := strconv.Atoi(strId)
+    id, err := strconv.ParseInt(strId, 10, 64)
     if err != nil {
         panic(err)
     }
 
-    price := models.Price {
-        Id: &id,
-    }
-
-    _, err = db.Client.NewDelete().
-        Model(&price).
-        Where("id = ?", id).
-        Exec(ctx)
-    if err != nil {
-        panic(err)
-    }
-
-    ctx.JSON(true)
+    ctx.JSON(models.DeletePrice(&id, ctx))
 }
