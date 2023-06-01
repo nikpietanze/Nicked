@@ -1,0 +1,15 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: PriceTracker
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: super_secret_password
+    ports:
+      - 5432:5432
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
