@@ -42,6 +42,19 @@ func GetTracker(id *int64, ctx iris.Context) *Tracker {
     return tracker
 }
 
+func GetActiveTrackers(ctx iris.Context) []Tracker {
+    var trackers []Tracker
+    err := db.Client.NewSelect().
+        Model(trackers).
+        Where("active LIKE ?", "true").
+        Scan(ctx)
+    if err != nil {
+        panic(err)
+    }
+
+    return trackers
+}
+
 func CreateTracker(tracker *Tracker, ctx iris.Context) int64 {
     tracker.Email = strings.ToLower(tracker.Email)
     tracker.Active = true

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/kataras/iris/v12"
@@ -8,7 +9,7 @@ import (
 	"pricetracker/models"
 )
 
-func GetItem(ctx iris.Context) {
+func GetItem(ctx context.Context) {
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().

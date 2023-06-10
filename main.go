@@ -3,8 +3,9 @@ package main
 import (
 	"github.com/kataras/iris/v12"
 
-    "pricetracker/db"
-    "pricetracker/handlers"
+	"pricetracker/db"
+	"pricetracker/handlers"
+	"pricetracker/scraper"
 )
 
 func main() {
@@ -23,6 +24,8 @@ func main() {
             tracker.Delete("/{id}", handlers.DeleteTracker)
         }
     }
+
+    scraper.Init()
 
     app.Listen(":8080")
 }
