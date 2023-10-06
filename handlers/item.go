@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"strconv"
 
 	"github.com/kataras/iris/v12"
@@ -9,11 +8,11 @@ import (
 	"pricetracker/models"
 )
 
-func GetItem(ctx context.Context) {
+func GetItem(ctx iris.Context) {
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-            Title("Missing or invalid item id"))
+            Title("missing or invalid item id"))
         return
     }
 
@@ -26,19 +25,13 @@ func GetItem(ctx context.Context) {
 }
 
 func CreateItem(ctx iris.Context) {
-    // TODO: verify if this works
     var item models.Item
     err := ctx.ReadJSON(&item)
     if err != nil {
         ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-            Title("Missing or invalid item data").DetailErr(err))
+            Title("missing or invalid item data").DetailErr(err))
         return
     }
-
-    for _, v := range item.Merchants {
-        models.CreateMerchant(v, ctx)
-	}
-
 
     ctx.JSON(models.CreateItem(&item, ctx))
 }
@@ -48,7 +41,7 @@ func UpdateItem(ctx iris.Context) {
     err := ctx.ReadJSON(&item)
     if err != nil {
         ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-            Title("Missing or invalid item data").DetailErr(err))
+            Title("missing or invalid item data").DetailErr(err))
         return
     }
 
@@ -59,7 +52,7 @@ func DeleteItem(ctx iris.Context) {
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-            Title("Missing or invalid item id"))
+            Title("missing or invalid item id"))
         return
     }
 

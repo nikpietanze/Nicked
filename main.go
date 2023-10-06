@@ -16,12 +16,20 @@ func main() {
 
     api := app.Party("/api")
     {
-        tracker := api.Party("/tracker")
+        user := api.Party("/user")
         {
-            tracker.Get("/{id}", handlers.GetTracker)
-            tracker.Post("/", handlers.CreateTracker)
-            tracker.Put("/", handlers.UpdateTracker)
-            tracker.Delete("/{id}", handlers.DeleteTracker)
+            user.Get("/{id}", handlers.GetUser)
+            user.Post("/", handlers.CreateUser)
+            user.Put("/", handlers.UpdateUser)
+            user.Delete("/{id}", handlers.DeleteUser)
+        }
+
+        item := api.Party("/item")
+        {
+            item.Get("/{id}", handlers.GetItem)
+            item.Post("/", handlers.CreateItem)
+            item.Put("/", handlers.UpdateItem)
+            item.Delete("/{id}", handlers.DeleteItem)
         }
     }
 

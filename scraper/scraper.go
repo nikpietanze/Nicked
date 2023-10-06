@@ -1,6 +1,10 @@
 package scraper
 
 import (
+	"log"
+	"net/url"
+	"strings"
+
 	"reflect"
 	"strconv"
 	"time"
@@ -28,26 +32,25 @@ func Scrape() {
     ctxPtr := reflect.New(reflect.TypeOf(new(iris.Context)))
     ctx := ctxPtr.Elem().Interface().(iris.Context)
 
-    trackers := models.GetActiveTrackers(ctx)
-    for _, tracker := range trackers {
-        item := models.GetItem(tracker.ItemId, ctx)
-        for _, merchant := range item.Merchants {
-            price := models.Price{}
-            price.MerchantId = merchant.Id
-
-            if (merchant.Name == "Amazon") {
-                p := ScrapeAmazon(merchant.Url)
-                price.Value = &p
-            }
-            if (merchant.Name == "Wayfair") {
-                p := ScrapeWayfair(merchant.Url)
-                price.Value = &p
-            }
-
-            models.CreatePrice(&price, ctx)
+    items := models.GetActiveItems(ctx)
+    for _, item := range items {
+        url, err := url.Parse(item.Url)
+        if err != nil {
+            log.Fatal("error parsing url", err)
         }
-    }
 
+        price := models.Price{}
+
+        if strings.Contains(url.Host, "amazon") {
+            p := ScrapeAmazon(item.Url)
+            price.Amount = &p
+        } else if strings.Contains(url.Host, "wayfair") {
+            p := ScrapeWayfair(item.Url)
+            price.Amount = &p
+        }
+
+        models.CreatePrice(&price, ctx)
+    }
 }
 
 func ScrapeAmazon(url string) float64 {

@@ -11,9 +11,11 @@ import (
 
 type Item struct {
     Id *int64 `bun:"id,pk,autoincrement"`
+    IsActive bool `bun:",notnull"`
     Name string `bun:",notnull"`
-    Trackers []*Tracker `bun:"rel:has-many,join:id=item_id"`
-    Merchants []*Merchant `bun:"rel:has-many,join:id=item_id"`
+    Prices []*Price `bun:"rel:has-many,join:id=item_id"`
+    Url string `bun:",notnull"`
+    UserId *int64 `bun:",notnull"`
     CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
     UpdatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
@@ -22,6 +24,7 @@ func InitItem(ctx iris.Context) {
     _, err := db.Client.NewCreateTable().
         Model((*Item)(nil)).
         IfNotExists().
+        ForeignKey(`("user_id") REFERENCES "users" ("id") ON DELETE CASCADE`).
         Exec(ctx)
     if err != nil {
         panic(err)
@@ -38,6 +41,19 @@ func GetItem(id *int64, ctx iris.Context) *Item {
         panic(err)
     }
     return item
+}
+
+func GetActiveItems(ctx iris.Context) []Item {
+    var items []Item
+    err := db.Client.NewSelect().
+        Model(items).
+        Where("active LIKE ?", "true").
+        Scan(ctx)
+    if err != nil {
+        panic(err)
+    }
+
+    return items
 }
 
 func CreateItem(item *Item, ctx iris.Context) int64 {

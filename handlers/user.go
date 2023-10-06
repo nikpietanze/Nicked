@@ -8,11 +8,11 @@ import (
 	"pricetracker/models"
 )
 
-func GetMerchant(ctx iris.Context) {
+func GetUser(ctx iris.Context) {
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-            Title("Missing or invalid merchant id"))
+            Title("missing or invalid user id"))
         return
     }
 
@@ -21,38 +21,38 @@ func GetMerchant(ctx iris.Context) {
         panic(err)
     }
 
-    ctx.JSON(models.GetMerchant(&id, ctx))
+    ctx.JSON(models.GetUser(&id, ctx))
 }
 
-func CreateMerchant(ctx iris.Context) {
-    var merchant models.Merchant
-    err := ctx.ReadJSON(&merchant)
+func CreateUser(ctx iris.Context) {
+    var user models.User
+    err := ctx.ReadJSON(&user)
     if err != nil {
         ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-            Title("Missing or invalid merchant data").DetailErr(err))
+            Title("missing or invalid user data").DetailErr(err))
         return
     }
 
-    ctx.JSON(models.CreateMerchant(&merchant, ctx))
+    ctx.JSON(models.CreateUser(&user, ctx))
 }
 
-func UpdateMerchant(ctx iris.Context) {
-    var merchant models.Merchant
-    err := ctx.ReadJSON(&merchant)
+func UpdateUser(ctx iris.Context) {
+    var user models.User
+    err := ctx.ReadJSON(&user)
     if err != nil {
         ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-            Title("Missing or invalid merchant data").DetailErr(err))
+            Title("missing or invalid user data").DetailErr(err))
         return
     }
 
-    ctx.JSON(models.UpdateMerchant(&merchant, ctx))
+    ctx.JSON(models.UpdateUser(&user, ctx))
 }
 
-func DeleteMerchant(ctx iris.Context) {
+func DeleteUser(ctx iris.Context) {
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-            Title("Missing or invalid merchant id"))
+            Title("missing or invalid user id"))
         return
     }
 
@@ -61,5 +61,6 @@ func DeleteMerchant(ctx iris.Context) {
         panic(err)
     }
 
-    ctx.JSON(models.DeleteMerchant(&id, ctx))
+    ctx.JSON(models.DeleteUser(&id, ctx))
 }
+

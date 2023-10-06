@@ -12,7 +12,7 @@ func GetPrice(ctx iris.Context) {
     strId := ctx.Params().Get("id")
     if strId == "" {
         ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-            Title("Missing or invalid price id"))
+            Title("missing or invalid price id"))
         return
     }
 
@@ -29,7 +29,7 @@ func CreatePrice(ctx iris.Context) {
     err := ctx.ReadJSON(&price)
     if err != nil {
         ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-            Title("Missing or invalid price data").DetailErr(err))
+            Title("missing or invalid price data").DetailErr(err))
         return
     }
 
@@ -41,7 +41,7 @@ func UpdatePrice(ctx iris.Context) {
     err := ctx.ReadJSON(&price)
     if err != nil {
         ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-            Title("Missing or invalid price data").DetailErr(err))
+            Title("missing or invalid price data").DetailErr(err))
         return
     }
 
@@ -63,3 +63,4 @@ func DeletePrice(ctx iris.Context) {
 
     ctx.JSON(models.DeletePrice(&id, ctx))
 }
+

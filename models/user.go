@@ -9,65 +9,48 @@ import (
 	"pricetracker/db"
 )
 
-type Tracker struct {
+type User struct {
     Id *int64 `bun:"id,pk,autoincrement"`
     Email string `bun:",notnull"`
-    ItemId *int64
-    Active bool `bun:",notnull"`
+    Items []*Item `bun:"rel:has-many,join:id=user_id"`
     CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
     UpdatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-func InitTracker(ctx iris.Context) {
+func InitUser(ctx iris.Context) {
     _, err := db.Client.NewCreateTable().
-        Model((*Tracker)(nil)).
+        Model((*User)(nil)).
         IfNotExists().
-        ForeignKey(`("item_id") REFERENCES "items" ("id") ON DELETE CASCADE`).
         Exec(ctx)
     if err != nil {
         panic(err)
     }
 }
 
-func GetTracker(id *int64, ctx iris.Context) *Tracker {
-    tracker := new(Tracker)
+func GetUser(id *int64, ctx iris.Context) *User {
+    user := new(User)
     err := db.Client.NewSelect().
-        Model(tracker).
+        Model(&user).
         Where("id = ?", id).
         Scan(ctx)
     if err != nil {
         panic(err)
     }
-
-    return tracker
+    return user
 }
 
-func GetActiveTrackers(ctx iris.Context) []Tracker {
-    var trackers []Tracker
-    err := db.Client.NewSelect().
-        Model(trackers).
-        Where("active LIKE ?", "true").
-        Scan(ctx)
-    if err != nil {
-        panic(err)
-    }
-
-    return trackers
-}
-
-func CreateTracker(tracker *Tracker, ctx iris.Context) int64 {
-    tracker.Email = strings.ToLower(tracker.Email)
-    tracker.Active = true
+func CreateUser(user *User, ctx iris.Context) int64 {
+    user.Email = strings.ToLower(user.Email)
 
     res, err := db.Client.NewInsert().
-        Model(tracker).
+        Model(user).
         Returning("id").
         Exec(ctx)
     if err != nil {
         panic(err)
     }
 
-    id, err := res.RowsAffected()
+    id, err := res.LastInsertId()
     if err != nil {
         panic(err)
     }
@@ -75,10 +58,12 @@ func CreateTracker(tracker *Tracker, ctx iris.Context) int64 {
     return id
 }
 
-func UpdateTracker(tracker *Tracker, ctx iris.Context) int64 {
+func UpdateUser(user *User, ctx iris.Context) int64 {
+    user.UpdatedAt = time.Now()
+
     res, err := db.Client.NewUpdate().
-        Model(tracker).
-        Column("name", "url", "email", "active").
+        Model(user).
+        Column("name", "updated_at").
         OmitZero().
         WherePK().
         Returning("id").
@@ -87,7 +72,7 @@ func UpdateTracker(tracker *Tracker, ctx iris.Context) int64 {
         panic(err)
     }
 
-    id, err := res.RowsAffected()
+    id, err := res.LastInsertId()
     if err != nil {
         panic(err)
     }
@@ -95,13 +80,13 @@ func UpdateTracker(tracker *Tracker, ctx iris.Context) int64 {
     return id
 }
 
-func DeleteTracker(id *int64, ctx iris.Context) *int64 {
-    tracker := Tracker {
+func DeleteUser(id *int64, ctx iris.Context) *int64 {
+    user := User{
         Id: id,
     }
 
     _, err := db.Client.NewDelete().
-        Model(&tracker).
+        Model(&user).
         Where("id = ?", id).
         Exec(ctx)
     if err != nil {
@@ -110,3 +95,4 @@ func DeleteTracker(id *int64, ctx iris.Context) *int64 {
 
     return id
 }
+
