@@ -9,58 +9,69 @@ import (
 )
 
 func GetUser(ctx iris.Context) {
-    strId := ctx.Params().Get("id")
-    if strId == "" {
-        ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-            Title("missing or invalid user id"))
-        return
-    }
+	strId := ctx.Params().Get("id")
+	if strId == "" {
+		ctx.StopWithProblem(424, iris.NewProblem().
+			Title("missing or invalid user id"))
+	}
 
-    id, err := strconv.ParseInt(strId, 10, 64)
-    if err != nil {
-        panic(err)
-    }
+	id, err := strconv.ParseInt(strId, 10, 64)
+	if err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
+	}
 
-    ctx.JSON(models.GetUser(&id, ctx))
+	user, getErr := models.GetUser(&id, ctx)
+	if getErr != nil {
+		ctx.StopWithJSON(500, models.NewError(getErr))
+	}
+
+	ctx.JSON(user)
 }
 
 func CreateUser(ctx iris.Context) {
-    var user models.User
-    err := ctx.ReadJSON(&user)
-    if err != nil {
-        ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-            Title("missing or invalid user data").DetailErr(err))
-        return
-    }
+	var userJSON models.User
+	err := ctx.ReadJSON(&userJSON)
+	if err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
+	}
 
-    ctx.JSON(models.CreateUser(&user, ctx))
+	user, err := models.CreateUser(&userJSON, ctx)
+	if err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
+	}
+
+    ctx.JSON(user)
 }
 
 func UpdateUser(ctx iris.Context) {
-    var user models.User
-    err := ctx.ReadJSON(&user)
-    if err != nil {
-        ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-            Title("missing or invalid user data").DetailErr(err))
-        return
-    }
+	var userJSON models.User
+	err := ctx.ReadJSON(&userJSON)
+	if err != nil {
+		ctx.StopWithJSON(400, models.NewError(err))
+	}
 
-    ctx.JSON(models.UpdateUser(&user, ctx))
+	user, err := models.UpdateUser(&userJSON, ctx)
+	if err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
+	}
+
+    ctx.JSON(user)
 }
 
 func DeleteUser(ctx iris.Context) {
-    strId := ctx.Params().Get("id")
-    if strId == "" {
-        ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-            Title("missing or invalid user id"))
-        return
-    }
+	strId := ctx.Params().Get("id")
+	if strId == "" {
+		ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
+			Title("missing or invalid user id"))
+	}
 
-    id, err := strconv.ParseInt(strId, 10, 64)
-    if err != nil {
-        panic(err)
-    }
+	id, err := strconv.ParseInt(strId, 10, 64)
+	if err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
+	}
 
-    ctx.JSON(models.DeleteUser(&id, ctx))
+	deleteErr := models.DeleteUser(id, ctx)
+	if deleteErr != nil {
+		ctx.StopWithJSON(500, models.NewError(deleteErr))
+	}
 }
-

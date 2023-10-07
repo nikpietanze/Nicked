@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/kataras/iris/v12"
@@ -9,65 +10,104 @@ import (
 )
 
 type Price struct {
-    Id *int64 `bun:"id,pk,autoincrement"`
-    ItemId *int64 `bun:",notnull"`
-    Amount *float64 `bun:",notnull"`
-    CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
+	Id        int64    `bun:"id,pk,autoincrement"`
+	Amount    float64  `bun:",notnull"`
+	ItemId    int64    `bun:",notnull"`
+	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-func InitPrice(ctx iris.Context) {
-    _, err := db.Client.NewCreateTable().
-        Model((*Price)(nil)).
-        IfNotExists().
-        ForeignKey(`("item_id") REFERENCES "items" ("id") ON DELETE CASCADE`).
-        Exec(ctx)
-    if err != nil {
-        panic(err)
-    }
+func InitPrice(ctx iris.Context) error {
+	_, err := db.Client.NewCreateTable().
+		Model((*Price)(nil)).
+		IfNotExists().
+		ForeignKey(`("item_id") REFERENCES "items" ("id") ON DELETE CASCADE`).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func GetPrice(id *int64, ctx iris.Context) *Price {
-    price := new(Price)
-    err := db.Client.NewSelect().
-        Model(&price).
-        Where("id = ?", id).
-        Scan(ctx)
-    if err != nil {
-        panic(err)
-    }
+func GetPrice(id *int64, ctx iris.Context) (*Price, error) {
+	if id == nil {
+		return nil, errors.New("missing or invalid price id")
+	}
 
-    return price
+	price := new(Price)
+	err := db.Client.NewSelect().
+		Model(price).
+		Where("id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return price, nil
 }
 
-func CreatePrice(price *Price, ctx iris.Context) int64 {
-    res, err := db.Client.NewInsert().
-        Model(price).
-        Returning("id").
-        Exec(ctx)
-    if err != nil {
-        panic(err)
-    }
+func GetPricesByItem(itemId *int64, ctx iris.Context) ([]Price, error) {
+	if itemId == nil {
+		return nil, errors.New("missing or invalid item id")
+	}
 
-    id, err := res.RowsAffected()
-    if err != nil {
-        panic(err)
-    }
-
-    return id
+	var prices []Price
+	err := db.Client.NewSelect().
+		Model(&prices).
+		Where("item_id = ?", itemId).
+		Order("created_at DESC").
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return prices, nil
 }
 
-func DeletePrice(id *int64, ctx iris.Context) *int64 {
-    price := Price {
-        Id: id,
-    }
+func GetLatestPriceByItem(itemId *int64, ctx iris.Context) (*Price, error) {
+	if itemId == nil {
+		return nil, errors.New("missing or invalid item id")
+	}
 
-    _, err := db.Client.NewDelete().
-        Model(&price).
-        Where("id = ?", id).
-        Exec(ctx)
-    if err != nil {
-        panic(err)
-    }
+	price := new(Price)
+	err := db.Client.NewSelect().
+		Model(price).
+		Where("item_id = ?", itemId).
+		Order("created_at DESC").
+		Limit(1).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return price, nil
+}
 
-    return id
+func CreatePrice(price *Price, ctx iris.Context) (*Price, error) {
+	if price == nil {
+		return nil, errors.New("missing or invalid price data")
+	}
+
+	_, err := db.Client.NewInsert().
+		Model(price).
+		Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+    newPrice, err := GetLatestPriceByItem(&price.ItemId, ctx)
+    if (err != nil) {
+        return nil, err
+    }
+	return newPrice, nil
+}
+
+func DeletePrice(id int64, ctx iris.Context) error {
+	price := Price{
+		Id: id,
+	}
+	_, err := db.Client.NewDelete().
+		Model(&price).
+		Where("id = ?", id).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
