@@ -1,4 +1,4 @@
-module pricetracker
+module Nicked
 
 go 1.20
 

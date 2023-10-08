@@ -6,7 +6,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 
-	"pricetracker/db"
+	"Nicked/db"
 )
 
 type Price struct {

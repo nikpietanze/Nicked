@@ -7,7 +7,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 
-	"pricetracker/db"
+	"Nicked/db"
 )
 
 type Item struct {
@@ -53,8 +53,8 @@ func GetItem(id *int64, ctx iris.Context) (*Item, error) {
 func GetActiveItems(ctx iris.Context) ([]Item, error) {
 	var items []Item
 	err := db.Client.NewSelect().
-		Model(items).
-		Where("active LIKE ?", "true").
+		Model(&items).
+		Where("is_active = ?", "true").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func GetItemsByUser(id *int64, email string, ctx iris.Context) ([]Item, error) {
 
 	var items []Item
 	err := db.Client.NewSelect().
-		Model(items).
+		Model(&items).
 		Where("user_id = ?", user.Id).
         Relation("Prices").
 		Scan(ctx)
@@ -118,7 +118,7 @@ func GetLastItemByUser(id *int64, email string, ctx iris.Context) (*Item, error)
 
 	var item Item
 	err := db.Client.NewSelect().
-		Model(item).
+		Model(&item).
 		Where("user_id = ?", user.Id).
         Relation("Prices").
 		Order("created_at DESC").

@@ -5,7 +5,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 
-	"pricetracker/models"
+	"Nicked/models"
 )
 
 func GetUser(ctx iris.Context) {

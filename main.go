@@ -3,10 +3,10 @@ package main
 import (
 	"github.com/kataras/iris/v12"
 
-	"pricetracker/db"
-	"pricetracker/handlers"
-	"pricetracker/models"
-	"pricetracker/scraper"
+	"Nicked/db"
+	"Nicked/handlers"
+	"Nicked/models"
+	"Nicked/scraper"
 )
 
 func main() {
@@ -14,6 +14,8 @@ func main() {
 	app.Use(iris.Compression)
 
 	db.Init()
+
+    app.Get("/", middleware)
 
 	api := app.Party("/api")
 	{
@@ -53,7 +55,10 @@ func main() {
 		}
 	}
 
-	scraper.Init()
 
 	app.Listen(":8080")
+}
+
+func middleware(ctx iris.Context) {
+    scraper.Init(ctx)
 }
