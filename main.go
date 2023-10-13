@@ -16,6 +16,7 @@ func main() {
     // middlewares
 	app.Use(iris.Compression)
     app.Use(middlewares.Auth())
+    app.Use(middlewares.Logger())
 
 	db.Init()
 
