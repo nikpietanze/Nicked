@@ -22,6 +22,7 @@ func main() {
     // middlewares
 	app.Use(iris.Compression)
     app.Use(middlewares.Auth())
+    app.Use(middlewares.Logger())
 
 	scraperStarted := false
 	app.Get("/", func(ctx iris.Context) {
