@@ -5,13 +5,17 @@ import (
 
 	"Nicked/db"
 	"Nicked/handlers"
+	"Nicked/middlewares"
 	"Nicked/models"
 	"Nicked/scraper"
 )
 
 func main() {
 	app := iris.New()
+
+    // middlewares
 	app.Use(iris.Compression)
+    app.Use(middlewares.Auth())
 
 	db.Init()
 
