@@ -29,15 +29,54 @@ func GetItem(ctx iris.Context) {
 }
 
 func CreateItem(ctx iris.Context) {
-	var itemJSON models.Item
-	err := ctx.ReadJSON(&itemJSON)
-	if err != nil {
+	type ItemJSON struct {
+		Currency string
+		Email    string
+		Name     string
+		Price    string
+		Sku      string
+		Store    string
+		Url      string
+	}
+
+	var itemJSON ItemJSON
+	if err := ctx.ReadJSON(&itemJSON); err != nil {
 		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
 			Title("missing or invalid item data").DetailErr(err))
 	}
 
-	item, err := models.CreateItem(&itemJSON, ctx)
+    user, err := models.GetUserByEmail(itemJSON.Email, ctx)
 	if err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
+	}
+
+    newItem := models.Item{
+        Name: itemJSON.Name,
+        IsActive: true,
+        Sku: itemJSON.Sku,
+        Url: itemJSON.Url,
+        UserId: user.Id,
+    }
+
+	item, err := models.CreateItem(&newItem, ctx)
+	if err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
+	}
+
+    priceFlt, err := strconv.ParseFloat(itemJSON.Price, 64)
+	if err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
+	}
+
+    newPrice := models.Price{
+        Amount: priceFlt,
+        Currency: itemJSON.Currency,
+        Store: itemJSON.Store,
+        ItemId: item.Id,
+    }
+
+    _, err = models.CreatePrice(&newPrice, ctx)
+    if err != nil {
 		ctx.StopWithJSON(500, models.NewError(err))
 	}
 
@@ -46,8 +85,7 @@ func CreateItem(ctx iris.Context) {
 
 func UpdateItem(ctx iris.Context) {
 	var itemJSON models.Item
-	err := ctx.ReadJSON(&itemJSON)
-	if err != nil {
+	if err := ctx.ReadJSON(&itemJSON); err != nil {
 		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
 			Title("missing or invalid item data").DetailErr(err))
 	}
@@ -57,7 +95,7 @@ func UpdateItem(ctx iris.Context) {
 		ctx.StopWithJSON(500, models.NewError(err))
 	}
 
-    ctx.JSON(item)
+	ctx.JSON(item)
 }
 
 func DeleteItem(ctx iris.Context) {
@@ -72,8 +110,7 @@ func DeleteItem(ctx iris.Context) {
 		ctx.StopWithJSON(500, models.NewError(err))
 	}
 
-	deleteErr := models.DeleteItem(id, ctx)
-	if deleteErr != nil {
-		ctx.StopWithJSON(500, models.NewError(deleteErr))
+	if err := models.DeleteItem(id, ctx); err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
 	}
 }

@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"log"
 	"strings"
 	"time"
 
@@ -18,14 +19,15 @@ type User struct {
 	UpdatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-func InitUser(ctx iris.Context) {
+func InitUser(ctx iris.Context) error {
 	_, err := db.Client.NewCreateTable().
 		Model((*User)(nil)).
 		IfNotExists().
 		Exec(ctx)
 	if err != nil {
-		ctx.StopWithJSON(500, NewError(err))
+        return err
 	}
+    return nil
 }
 
 func GetUser(id *int64, ctx iris.Context) (*User, error) {
@@ -65,6 +67,10 @@ func GetUserByEmail(email string, ctx iris.Context) (*User, error) {
 func CreateUser(user *User, ctx iris.Context) (*User, error) {
     if (user == nil) {
         return nil, errors.New("missing or invalid user data")
+    }
+
+    if err := InitUser(ctx); err != nil {
+        log.Print(err)
     }
 
 	user.Email = strings.ToLower(user.Email)

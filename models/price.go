@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/kataras/iris/v12"
@@ -12,6 +13,8 @@ import (
 type Price struct {
 	Id        int64    `bun:"id,pk,autoincrement"`
 	Amount    float64  `bun:",notnull"`
+    Currency  string   `bun:",notnull"`
+    Store     string   `bun:",notnull"`
 	ItemId    int64    `bun:",notnull"`
 	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
@@ -80,9 +83,13 @@ func GetLatestPriceByItem(itemId *int64, ctx iris.Context) (*Price, error) {
 }
 
 func CreatePrice(price *Price, ctx iris.Context) (*Price, error) {
-	if price == nil {
-		return nil, errors.New("missing or invalid price data")
-	}
+    if price == nil {
+        return nil, errors.New("missing or invalid price data")
+    }
+
+    if err := InitPrice(ctx); err != nil {
+        log.Print(err)
+    }
 
 	_, err := db.Client.NewInsert().
 		Model(price).
