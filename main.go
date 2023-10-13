@@ -2,12 +2,12 @@ package main
 
 import (
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/basicauth"
 
 	"Nicked/db"
 	"Nicked/handlers"
 	apiHandlers "Nicked/handlers/api"
 	"Nicked/middlewares"
-	"Nicked/models"
 	"Nicked/scraper"
 )
 
@@ -19,10 +19,16 @@ func main() {
 	app.RegisterView(iris.HTML("./views", ".html"))
 	app.HandleDir("/public", iris.Dir("./public"))
 
-    // middlewares
+	opts := basicauth.Options{
+		Allow: basicauth.AllowUsersFile("users.yml", basicauth.BCRYPT),
+		Realm: basicauth.DefaultRealm,
+	}
+	auth := basicauth.New(opts)
+
+	// global middleware
 	app.Use(iris.Compression)
-    app.Use(middlewares.Auth())
-    app.Use(middlewares.Logger())
+	app.Use(middlewares.Logger())
+    app.UseRouter(middlewares.Cors())
 
 	scraperStarted := false
 	app.Get("/", func(ctx iris.Context) {
@@ -58,10 +64,13 @@ func main() {
 		}
 	})
 
-	app.Post("/analytics", handlers.CreateDataPoint)
-
 	api := app.Party("/api")
 	{
+		// api middleware
+		api.Use(auth)
+
+		api.Post("/analytics", handlers.CreateDataPoint)
+
 		user := api.Party("/user")
 		{
 			user.Get("/{id}", apiHandlers.GetUser)
@@ -85,6 +94,7 @@ func main() {
 			price.Delete("/{id}", apiHandlers.DeletePrice)
 		}
 	}
+
 
 	app.Listen(":8080")
 }
