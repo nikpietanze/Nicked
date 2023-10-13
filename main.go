@@ -6,6 +6,8 @@ import (
 	"Nicked/db"
 	"Nicked/handlers"
 	apiHandlers "Nicked/handlers/api"
+	"Nicked/middlewares"
+	"Nicked/models"
 	"Nicked/scraper"
 )
 
@@ -17,8 +19,9 @@ func main() {
 	app.RegisterView(iris.HTML("./views", ".html"))
 	app.HandleDir("/public", iris.Dir("./public"))
 
-	// middleware
+    // middlewares
 	app.Use(iris.Compression)
+    app.Use(middlewares.Auth())
 
 	scraperStarted := false
 	app.Get("/", func(ctx iris.Context) {
