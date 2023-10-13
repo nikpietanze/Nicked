@@ -19,6 +19,7 @@ var Scraper *colly.Collector
 var CTX iris.Context
 
 func Init(ctx iris.Context) {
+    return
 	println("starting scraper process")
 	CTX = ctx
 
