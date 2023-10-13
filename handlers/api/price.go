@@ -30,8 +30,7 @@ func GetPrice(ctx iris.Context) {
 
 func CreatePrice(ctx iris.Context) {
 	var priceJSON models.Price
-	err := ctx.ReadJSON(&priceJSON)
-	if err != nil {
+	if err := ctx.ReadJSON(&priceJSON); err != nil {
 		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
 			Title("missing or invalid price data").DetailErr(err))
 	}
@@ -56,8 +55,7 @@ func DeletePrice(ctx iris.Context) {
 		ctx.StopWithJSON(500, models.NewError(err))
 	}
 
-	deleteErr := models.DeletePrice(id, ctx)
-	if deleteErr != nil {
+	if err := models.DeletePrice(id, ctx); err != nil {
 		ctx.StopWithJSON(500, models.NewError(err))
 	}
 }

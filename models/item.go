@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"log"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ type Item struct {
 	IsActive  bool      `bun:",notnull"`
 	Name      string    `bun:",notnull"`
 	Prices    []*Price  `bun:"rel:has-many,join:id=item_id"`
+    Sku       string    `bun:",notnull"`
 	Url       string    `bun:",notnull"`
 	UserId    int64    `bun:",notnull"`
 	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
@@ -132,11 +134,15 @@ func GetLastItemByUser(id *int64, email string, ctx iris.Context) (*Item, error)
 }
 
 func CreateItem(item *Item, ctx iris.Context) (*Item, error) {
-	if item == nil {
-		return nil, errors.New("missing or invalid item data")
-	}
+    if item == nil {
+        return nil, errors.New("missing or invalid item data")
+    }
 
-	item.Name = strings.Title(item.Name)
+    if err := InitItem(ctx); err != nil {
+        log.Print(err)
+    }
+
+	item.Name = strings.ToTitle(item.Name)
 	_, err := db.Client.NewInsert().
 		Model(item).
 		Exec(ctx)

@@ -30,8 +30,7 @@ func GetUser(ctx iris.Context) {
 
 func CreateUser(ctx iris.Context) {
 	var userJSON models.User
-	err := ctx.ReadJSON(&userJSON)
-	if err != nil {
+	if err := ctx.ReadJSON(&userJSON); err != nil {
 		ctx.StopWithJSON(500, models.NewError(err))
 	}
 
@@ -45,8 +44,7 @@ func CreateUser(ctx iris.Context) {
 
 func UpdateUser(ctx iris.Context) {
 	var userJSON models.User
-	err := ctx.ReadJSON(&userJSON)
-	if err != nil {
+	if err := ctx.ReadJSON(&userJSON); err != nil {
 		ctx.StopWithJSON(400, models.NewError(err))
 	}
 
@@ -70,8 +68,7 @@ func DeleteUser(ctx iris.Context) {
 		ctx.StopWithJSON(500, models.NewError(err))
 	}
 
-	deleteErr := models.DeleteUser(id, ctx)
-	if deleteErr != nil {
-		ctx.StopWithJSON(500, models.NewError(deleteErr))
+	if err := models.DeleteUser(id, ctx); err != nil {
+		ctx.StopWithJSON(500, models.NewError(err))
 	}
 }
