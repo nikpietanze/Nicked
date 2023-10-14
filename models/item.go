@@ -1,12 +1,11 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"log"
 	"strings"
 	"time"
-
-	"github.com/kataras/iris/v12"
 
 	"Nicked/db"
 )
@@ -23,7 +22,7 @@ type Item struct {
 	UpdatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-func InitItem(ctx iris.Context) error {
+func InitItem(ctx context.Context) error {
 	_, err := db.Client.NewCreateTable().
 		Model((*Item)(nil)).
 		IfNotExists().
@@ -35,7 +34,7 @@ func InitItem(ctx iris.Context) error {
 	return nil
 }
 
-func GetItem(id *int64, ctx iris.Context) (*Item, error) {
+func GetItem(id *int64, ctx context.Context) (*Item, error) {
     if (id == nil) {
         return nil, errors.New("missing or invalid user id")
     }
@@ -52,7 +51,7 @@ func GetItem(id *int64, ctx iris.Context) (*Item, error) {
     return item, nil
 }
 
-func GetActiveItems(ctx iris.Context) ([]Item, error) {
+func GetActiveItems(ctx context.Context) ([]Item, error) {
 	var items []Item
 	err := db.Client.NewSelect().
 		Model(&items).
@@ -65,7 +64,7 @@ func GetActiveItems(ctx iris.Context) ([]Item, error) {
 	return items, nil
 }
 
-func GetItemsByUser(id *int64, email string, ctx iris.Context) ([]Item, error) {
+func GetItemsByUser(id *int64, email string, ctx context.Context) ([]Item, error) {
 	if id == nil && email == "" {
 		return nil, errors.New("missing or invalid item id and email")
 	}
@@ -98,7 +97,7 @@ func GetItemsByUser(id *int64, email string, ctx iris.Context) ([]Item, error) {
 	return items, nil
 }
 
-func GetLastItemByUser(id *int64, email string, ctx iris.Context) (*Item, error) {
+func GetLastItemByUser(id *int64, email string, ctx context.Context) (*Item, error) {
 	if id == nil && email == "" {
 		return nil, errors.New("missing or invalid item id and email")
 	}
@@ -133,7 +132,7 @@ func GetLastItemByUser(id *int64, email string, ctx iris.Context) (*Item, error)
 	return &item, nil
 }
 
-func CreateItem(item *Item, ctx iris.Context) (*Item, error) {
+func CreateItem(item *Item, ctx context.Context) (*Item, error) {
     if item == nil {
         return nil, errors.New("missing or invalid item data")
     }
@@ -160,7 +159,7 @@ func CreateItem(item *Item, ctx iris.Context) (*Item, error) {
 	return newItem, nil
 }
 
-func UpdateItem(item *Item, ctx iris.Context) (*Item, error) {
+func UpdateItem(item *Item, ctx context.Context) (*Item, error) {
 	if item == nil {
 		return nil, errors.New("missing or invalid item data")
 	}
@@ -180,7 +179,7 @@ func UpdateItem(item *Item, ctx iris.Context) (*Item, error) {
 	return item, nil
 }
 
-func DeleteItem(id int64, ctx iris.Context) error {
+func DeleteItem(id int64, ctx context.Context) error {
 	item := Item{
 		Id: id,
 	}
