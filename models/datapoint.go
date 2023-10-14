@@ -2,11 +2,11 @@ package models
 
 import (
 	"Nicked/db"
+	"context"
 	"errors"
 	"log"
 	"time"
 
-	"github.com/kataras/iris/v12"
 	"github.com/uptrace/bun"
 )
 
@@ -22,7 +22,7 @@ type DataPoint struct {
 	CreatedAt     time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-func InitAnalytics(ctx iris.Context) error {
+func InitAnalytics(ctx context.Context) error {
 	_, err := db.Client.NewCreateTable().
 		Model((*DataPoint)(nil)).
 		IfNotExists().
@@ -33,7 +33,7 @@ func InitAnalytics(ctx iris.Context) error {
 	return nil
 }
 
-func CreateDataPoint(datapoint *DataPoint, ctx iris.Context) error {
+func CreateDataPoint(datapoint *DataPoint, ctx context.Context) error {
 	if datapoint == nil {
 		return errors.New("missing or invalid data point")
 	}

@@ -1,8 +1,13 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/middleware/basicauth"
+	"errors"
+	"html/template"
+	"io"
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	"Nicked/db"
 	"Nicked/handlers"
@@ -11,90 +16,86 @@ import (
 	"Nicked/scraper"
 )
 
+type TemplateRegistry struct {
+	templates map[string]*template.Template
+}
+
+func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	tmpl, ok := t.templates[name]
+	if !ok {
+		err := errors.New("Template not found: " + name)
+		return err
+	}
+	return tmpl.ExecuteTemplate(w, "base.html", data)
+}
+
 func main() {
-	app := iris.New()
+	e := echo.New()
 
 	db.Init()
 
-	app.RegisterView(iris.HTML("./views", ".html"))
-	app.HandleDir("/public", iris.Dir("./public"))
+	templates := make(map[string]*template.Template)
+	templates["home.html"] = template.Must(template.ParseFiles("views/home.html", "views/layouts/base.html"))
+	templates["privacy.html"] = template.Must(template.ParseFiles("views/privacy.html", "views/layouts/base.html"))
 
-	opts := basicauth.Options{
-		Allow: basicauth.AllowUsersFile("users.yml", basicauth.BCRYPT),
-		Realm: basicauth.DefaultRealm,
+	e.Renderer = &TemplateRegistry{
+		templates: templates,
 	}
-	auth := basicauth.New(opts)
+
+	e.Static("/static", "public")
 
 	// global middleware
-	app.Use(iris.Compression)
-	app.Use(middlewares.Logger())
-    app.UseRouter(middlewares.Cors())
+	e.Use(middleware.Logger())
+	e.Use(middleware.CORS())
 
 	scraperStarted := false
-	app.Get("/", func(ctx iris.Context) {
+	e.GET("/", func(c echo.Context) error {
 		if !scraperStarted {
-			scraper.Init(ctx)
+			scraper.Init()
 			scraperStarted = true
 		}
 
-		data := iris.Map{
-			"Title": "Home | Nicked",
-		}
-
-		ctx.ViewLayout("layouts/main")
-
-		err := ctx.View("index", data)
-		if err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
-			return
-		}
+		return c.Render(http.StatusOK, "home.html", map[string]interface{}{
+			"title": "Nicked",
+		})
 	})
 
-	app.Get("/privacy", func(ctx iris.Context) {
-		data := iris.Map{
-			"Title": "Privacy | Nicked",
-		}
-
-		ctx.ViewLayout("layouts/main")
-
-		err := ctx.View("privacy", data)
-		if err != nil {
-			ctx.HTML("<h3>%s</h3>", err.Error())
-			return
-		}
+	e.GET("/privacy", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "privacy.html", map[string]interface{}{
+			"title": "Privacy Policy | Nicked",
+		})
 	})
 
-	api := app.Party("/api")
+	api := e.Group("/api")
 	{
 		// api middleware
-		api.Use(auth)
+		api.Use(middlewares.Auth())
 
-		api.Post("/analytics", handlers.CreateDataPoint)
+		api.POST("/analytics", handlers.CreateDataPoint)
 
-		user := api.Party("/user")
+		user := api.Group("/user")
 		{
-			user.Get("/{id}", apiHandlers.GetUser)
-			user.Post("/", apiHandlers.CreateUser)
-			user.Put("/", apiHandlers.UpdateUser)
-			user.Delete("/{id}", apiHandlers.DeleteUser)
+			user.GET("/{id}", apiHandlers.GetUser)
+			user.POST("/", apiHandlers.CreateUser)
+			user.PUT("/", apiHandlers.UpdateUser)
+			user.DELETE("/{id}", apiHandlers.DeleteUser)
 		}
 
-		item := api.Party("/item")
+		item := api.Group("/item")
 		{
-			item.Get("/{id}", apiHandlers.GetItem)
-			item.Post("/", apiHandlers.CreateItem)
-			item.Put("/", apiHandlers.UpdateItem)
-			item.Delete("/{id}", apiHandlers.DeleteItem)
+			item.GET("/{id}", apiHandlers.GetItem)
+			item.POST("/", apiHandlers.CreateItem)
+			item.PUT("/", apiHandlers.UpdateItem)
+			item.DELETE("/{id}", apiHandlers.DeleteItem)
 		}
 
-		price := api.Party("/price")
+		price := api.Group("/price")
 		{
-			price.Get("/{id}", apiHandlers.GetPrice)
-			price.Post("/", apiHandlers.CreatePrice)
-			price.Delete("/{id}", apiHandlers.DeletePrice)
+			price.GET("/{id}", apiHandlers.GetPrice)
+			price.POST("/", apiHandlers.CreatePrice)
+			price.DELETE("/{id}", apiHandlers.DeletePrice)
 		}
 	}
 
-
-	app.Listen(":8080")
+	e.Logger.Fatal(e.Start(":8080"))
 }

@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"context"
 	"log"
 	"net/url"
 	"strings"
@@ -10,18 +11,15 @@ import (
 
 	"github.com/go-co-op/gocron"
 	"github.com/gocolly/colly/v2"
-	"github.com/kataras/iris/v12"
 
 	"Nicked/models"
 )
 
 var Scraper *colly.Collector
-var CTX iris.Context
 
-func Init(ctx iris.Context) {
-    return
+func Init() {
+	return
 	println("starting scraper process")
-	CTX = ctx
 
 	Scraper = colly.NewCollector()
 
@@ -32,12 +30,13 @@ func Init(ctx iris.Context) {
 	}
 }
 
-func Scrape() {
+func Scrape() error {
+    ctx := context.Background()
 	println("starting automated scraping process")
 
-	items, err := models.GetActiveItems(CTX)
+	items, err := models.GetActiveItems(ctx)
 	if err != nil {
-		log.Println(err)
+        return err
 	}
 
 	for _, item := range items {
@@ -45,7 +44,7 @@ func Scrape() {
 
 		url, err := url.Parse(item.Url)
 		if err != nil {
-			log.Println(err)
+            return err
 		}
 
 		price := new(models.Price)
@@ -63,8 +62,12 @@ func Scrape() {
 		}
 
 		println("storing item price in db")
-		models.CreatePrice(price, CTX)
+        _, err = models.CreatePrice(price, ctx)
+        if err != nil {
+            return err
+        }
 	}
+    return nil
 }
 
 func ScrapeAmazon(url string) float64 {
@@ -84,7 +87,9 @@ func ScrapeAmazon(url string) float64 {
 		}
 	})
 
-	Scraper.Visit(url)
+    if err := Scraper.Visit(url); err != nil {
+        log.Println(err)
+    }
 	return price
 }
 
@@ -107,6 +112,8 @@ func ScrapeWayfair(url string) float64 {
 		price += flt
 	})
 
-	Scraper.Visit(url)
+    if err := Scraper.Visit(url); err != nil {
+        log.Println(err)
+    }
 	return price
 }

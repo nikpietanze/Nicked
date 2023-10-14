@@ -1,61 +1,69 @@
 package handlers
 
 import (
+	"net/http"
 	"strconv"
 
-	"github.com/kataras/iris/v12"
+	"github.com/labstack/echo/v4"
 
 	"Nicked/models"
 )
 
-func GetPrice(ctx iris.Context) {
-	strId := ctx.Params().Get("id")
+func GetPrice(c echo.Context) error {
+	strId := c.QueryParam("id")
 	if strId == "" {
-		ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-			Title("missing or invalid price id"))
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid price")
+        // Send DP
 	}
 
 	id, err := strconv.ParseInt(strId, 10, 64)
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
+        // Send DP
 	}
 
-	price, err := models.GetPrice(&id, ctx)
+	price, err := models.GetPrice(&id, c.Request().Context())
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
+        // Send DP
 	}
 
-	ctx.JSON(price)
+	return c.JSON(http.StatusOK, price)
 }
 
-func CreatePrice(ctx iris.Context) {
+func CreatePrice(c echo.Context) error {
 	var priceJSON models.Price
-	if err := ctx.ReadJSON(&priceJSON); err != nil {
-		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-			Title("missing or invalid price data").DetailErr(err))
+	if err := c.Bind(&priceJSON); err != nil {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid price")
+        // Send DP
 	}
 
-	price, err := models.CreatePrice(&priceJSON, ctx)
+	price, err := models.CreatePrice(&priceJSON, c.Request().Context())
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
+        // Send DP
 	}
 
-    ctx.JSON(price)
+    return c.JSON(http.StatusOK, price)
 }
 
-func DeletePrice(ctx iris.Context) {
-	strId := ctx.Params().Get("id")
+func DeletePrice(c echo.Context) error {
+	strId := c.QueryParam("id")
 	if strId == "" {
-		ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-			Title("Missing or invalid price id"))
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid price")
+        // Send DP
 	}
 
 	id, err := strconv.ParseInt(strId, 10, 64)
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
+        // Send DP
 	}
 
-	if err := models.DeletePrice(id, ctx); err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+	if err := models.DeletePrice(id, c.Request().Context()); err != nil {
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
+        // Send DP
 	}
+
+    return c.NoContent(http.StatusOK)
 }

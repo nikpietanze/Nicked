@@ -1,14 +1,19 @@
+{{define "body"}}
 <section class="py-14 grid grid-cols-2">
     <div class="flex flex-col p-4 pr-10 pl-14">
         <h1 class="text-6xl font-semibold mb-4">Let the sales get Nicked, not you</h1>
         <p class="text-lg">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt</p>
         <div class="mt-8">
-            {{ render "partials/downloadButton.html" "Get Nicked on Chrome • It's free" }}
+            <a class="w-fit rounded-full flex justify-center items-center bg-white p-2 px-4 shadow-md text-indigo-800 font-semibold transition-all hover:bg-indigo-500 hover:text-slate-100"
+                href="#" target="_blank">
+                Get Nicked on Chrome • It's free!
+            </a>
         </div>
     </div>
 
     <div>
-        <img src="https://as1.ftcdn.net/v2/jpg/02/41/43/18/1000_F_241431868_8DFQpCcmpEPVG0UvopdztOAd4a6Rqsoo.jpg" alt="">
+        <img src="https://as1.ftcdn.net/v2/jpg/02/41/43/18/1000_F_241431868_8DFQpCcmpEPVG0UvopdztOAd4a6Rqsoo.jpg"
+            alt="">
     </div>
 </section>
 
@@ -19,7 +24,8 @@
     </div>
 
     <div class="columns-2 py-4">
-        <img src="https://as1.ftcdn.net/v2/jpg/02/41/43/18/1000_F_241431868_8DFQpCcmpEPVG0UvopdztOAd4a6Rqsoo.jpg" alt="">
+        <img src="https://as1.ftcdn.net/v2/jpg/02/41/43/18/1000_F_241431868_8DFQpCcmpEPVG0UvopdztOAd4a6Rqsoo.jpg"
+            alt="">
 
         <div class="px-8 flex flex-col gap-2">
             <span class="uppercase text-indigo-300 text-sm font-semibold">USP 1</span>
@@ -28,7 +34,8 @@
     </div>
 
     <div class="columns-2 py-4">
-        <img src="https://as1.ftcdn.net/v2/jpg/02/41/43/18/1000_F_241431868_8DFQpCcmpEPVG0UvopdztOAd4a6Rqsoo.jpg" alt="">
+        <img src="https://as1.ftcdn.net/v2/jpg/02/41/43/18/1000_F_241431868_8DFQpCcmpEPVG0UvopdztOAd4a6Rqsoo.jpg"
+            alt="">
 
         <div class="px-8 flex flex-col gap-2">
             <span class="uppercase text-emerald-500 text-sm font-semibold">USP 2</span>
@@ -37,7 +44,8 @@
     </div>
 
     <div class="columns-2 py-4">
-        <img src="https://as1.ftcdn.net/v2/jpg/02/41/43/18/1000_F_241431868_8DFQpCcmpEPVG0UvopdztOAd4a6Rqsoo.jpg" alt="">
+        <img src="https://as1.ftcdn.net/v2/jpg/02/41/43/18/1000_F_241431868_8DFQpCcmpEPVG0UvopdztOAd4a6Rqsoo.jpg"
+            alt="">
 
         <div class="px-8 flex flex-col gap-2">
             <span class="uppercase textamber-500 text-sm font-semibold">USP 3</span>
@@ -47,10 +55,15 @@
 </section>
 
 <section class="py-10 flex flex-col justify-center items-center">
-    <h2 class="text-center max-w-2xl text-4xl font-semibold">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
+    <h2 class="text-center max-w-2xl text-4xl font-semibold">Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+        sed
         do eiusmod tempor incididunt</h2>
 
     <div class="mt-8">
-        {{ render "partials/downloadButton.html" "Get Nicked on Chrome • It's free" }}
+        <a class="w-fit rounded-full flex justify-center items-center bg-white p-2 px-4 shadow-md text-indigo-800 font-semibold transition-all hover:bg-indigo-500 hover:text-slate-100"
+            href="#" target="_blank">
+            Get Nicked on Chrome • It's free!
+        </a>
     </div>
 </section>
+{{end}}

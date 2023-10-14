@@ -1,116 +1,128 @@
 package handlers
 
 import (
+	"net/http"
 	"strconv"
 
-	"github.com/kataras/iris/v12"
+	"github.com/labstack/echo/v4"
 
 	"Nicked/models"
 )
 
-func GetItem(ctx iris.Context) {
-	strId := ctx.Params().Get("id")
+type ItemJSON struct {
+	Currency string
+	Email    string
+	Name     string
+	Price    string
+	Sku      string
+	Store    string
+	Url      string
+}
+
+func GetItem(c echo.Context) error {
+	strId := c.QueryParam("id")
 	if strId == "" {
-		ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-			Title("missing or invalid item id"))
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid item id")
+        // TODO: Send DP
 	}
 
 	id, err := strconv.ParseInt(strId, 10, 64)
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing item")
+        // TODO: Send DP
 	}
 
-	item, getErr := models.GetItem(&id, ctx)
+	item, err := models.GetItem(&id, c.Request().Context())
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(getErr))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing item")
+        // TODO: Send DP
 	}
 
-	ctx.JSON(item)
+	return c.JSON(http.StatusOK, item)
 }
 
-func CreateItem(ctx iris.Context) {
-	type ItemJSON struct {
-		Currency string
-		Email    string
-		Name     string
-		Price    string
-		Sku      string
-		Store    string
-		Url      string
-	}
+func CreateItem(c echo.Context) error {
 
 	var itemJSON ItemJSON
-	if err := ctx.ReadJSON(&itemJSON); err != nil {
-		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-			Title("missing or invalid item data").DetailErr(err))
+	if err := c.Bind(&itemJSON); err != nil {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid item")
+        // TODO: Send DP
 	}
 
-    user, err := models.GetUserByEmail(itemJSON.Email, ctx)
+	user, err := models.GetUserByEmail(itemJSON.Email, c.Request().Context())
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing item")
 	}
 
-    newItem := models.Item{
-        Name: itemJSON.Name,
-        IsActive: true,
-        Sku: itemJSON.Sku,
-        Url: itemJSON.Url,
-        UserId: user.Id,
-    }
+	itemDTO := models.Item{
+		Name:     itemJSON.Name,
+		IsActive: true,
+		Sku:      itemJSON.Sku,
+		Url:      itemJSON.Url,
+		UserId:   user.Id,
+	}
 
-	item, err := models.CreateItem(&newItem, ctx)
+	item, err := models.CreateItem(&itemDTO, c.Request().Context())
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing item")
+        // TODO: Send DP
 	}
 
-    priceFlt, err := strconv.ParseFloat(itemJSON.Price, 64)
+	priceFlt, err := strconv.ParseFloat(itemJSON.Price, 64)
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing item")
+        // TODO: Send DP
 	}
 
-    newPrice := models.Price{
-        Amount: priceFlt,
-        Currency: itemJSON.Currency,
-        Store: itemJSON.Store,
-        ItemId: item.Id,
-    }
-
-    _, err = models.CreatePrice(&newPrice, ctx)
-    if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+	priceDTO := models.Price{
+		Amount:   priceFlt,
+		Currency: itemJSON.Currency,
+		Store:    itemJSON.Store,
+		ItemId:   item.Id,
 	}
 
-	ctx.JSON(item)
+	_, err = models.CreatePrice(&priceDTO, c.Request().Context())
+	if err != nil {
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
+        // TODO: Send DP
+	}
+
+	return c.JSON(http.StatusOK, item)
 }
 
-func UpdateItem(ctx iris.Context) {
+func UpdateItem(c echo.Context) error {
 	var itemJSON models.Item
-	if err := ctx.ReadJSON(&itemJSON); err != nil {
-		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
-			Title("missing or invalid item data").DetailErr(err))
+	if err := c.Bind(&itemJSON); err != nil {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid item")
+        // TODO: Send DP
 	}
 
-	item, err := models.UpdateItem(&itemJSON, ctx)
+	item, err := models.UpdateItem(&itemJSON, c.Request().Context())
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing item")
+        // TODO: Send DP
 	}
 
-	ctx.JSON(item)
+	return c.JSON(http.StatusOK, item)
 }
 
-func DeleteItem(ctx iris.Context) {
-	strId := ctx.Params().Get("id")
+func DeleteItem(c echo.Context) error {
+    strId := c.QueryParam("id")
 	if strId == "" {
-		ctx.StopWithProblem(iris.StatusFailedDependency, iris.NewProblem().
-			Title("missing or invalid item id"))
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid item")
+        // TODO: Send DP
 	}
 
 	id, err := strconv.ParseInt(strId, 10, 64)
 	if err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing item")
+        // TODO: Send DP
 	}
 
-	if err := models.DeleteItem(id, ctx); err != nil {
-		ctx.StopWithJSON(500, models.NewError(err))
+	if err := models.DeleteItem(id, c.Request().Context()); err != nil {
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing item")
+        // TODO: Send DP
 	}
+
+    return c.NoContent(http.StatusOK)
 }
