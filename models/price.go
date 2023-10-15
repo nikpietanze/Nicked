@@ -2,8 +2,6 @@ package models
 
 import (
 	"context"
-	"errors"
-	"log"
 	"time"
 
 	"Nicked/db"
@@ -13,8 +11,7 @@ type Price struct {
 	Id        int64     `bun:"id,pk,autoincrement"`
 	Amount    float64   `bun:",notnull"`
 	Currency  string    `bun:",notnull"`
-	Store     string    `bun:",notnull"`
-	ItemId    int64     `bun:",notnull"`
+	ProductId int64     `bun:",notnull"`
 	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
@@ -22,7 +19,7 @@ func InitPrice(ctx context.Context) error {
 	_, err := db.Client.NewCreateTable().
 		Model((*Price)(nil)).
 		IfNotExists().
-		ForeignKey(`("item_id") REFERENCES "items" ("id") ON DELETE CASCADE`).
+		ForeignKey(`("product_id") REFERENCES "products" ("id") ON DELETE CASCADE`).
 		Exec(ctx)
 	if err != nil {
 		return err
@@ -30,11 +27,7 @@ func InitPrice(ctx context.Context) error {
 	return nil
 }
 
-func GetPrice(id *int64, ctx context.Context) (*Price, error) {
-	if id == nil {
-		return nil, errors.New("missing or invalid price id")
-	}
-
+func GetPrice(id int64, ctx context.Context) (*Price, error) {
 	price := new(Price)
 	err := db.Client.NewSelect().
 		Model(price).
@@ -46,15 +39,11 @@ func GetPrice(id *int64, ctx context.Context) (*Price, error) {
 	return price, nil
 }
 
-func GetPricesByItem(itemId *int64, ctx context.Context) ([]Price, error) {
-	if itemId == nil {
-		return nil, errors.New("missing or invalid item id")
-	}
-
+func GetPricesByProduct(productId int64, ctx context.Context) ([]Price, error) {
 	var prices []Price
 	err := db.Client.NewSelect().
 		Model(&prices).
-		Where("item_id = ?", itemId).
+		Where("product_id = ?", productId).
 		Order("created_at DESC").
 		Scan(ctx)
 	if err != nil {
@@ -63,15 +52,11 @@ func GetPricesByItem(itemId *int64, ctx context.Context) ([]Price, error) {
 	return prices, nil
 }
 
-func GetLatestPriceByItem(itemId *int64, ctx context.Context) (*Price, error) {
-	if itemId == nil {
-		return nil, errors.New("missing or invalid item id")
-	}
-
+func GetLatestPriceByProduct(productId int64, ctx context.Context) (*Price, error) {
 	price := new(Price)
 	err := db.Client.NewSelect().
 		Model(price).
-		Where("item_id = ?", itemId).
+		Where("product_id = ?", productId).
 		Order("created_at DESC").
 		Limit(1).
 		Scan(ctx)
@@ -81,23 +66,15 @@ func GetLatestPriceByItem(itemId *int64, ctx context.Context) (*Price, error) {
 	return price, nil
 }
 
-func CreatePrice(price *Price, ctx context.Context) (*Price, error) {
-	if price == nil {
-		return nil, errors.New("missing or invalid price data")
-	}
-
-	if err := InitPrice(ctx); err != nil {
-		log.Print(err)
-	}
-
+func CreatePrice(price Price, ctx context.Context) (*Price, error) {
 	_, err := db.Client.NewInsert().
-		Model(price).
+		Model(&price).
 		Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	newPrice, err := GetLatestPriceByItem(&price.ItemId, ctx)
+	newPrice, err := GetLatestPriceByProduct(price.ProductId, ctx)
 	if err != nil {
 		return nil, err
 	}
