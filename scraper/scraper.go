@@ -34,34 +34,34 @@ func Scrape() error {
     ctx := context.Background()
 	println("starting automated scraping process")
 
-	items, err := models.GetActiveItems(ctx)
+	products, err := models.GetActiveProducts(ctx)
 	if err != nil {
         return err
 	}
 
-	for _, item := range items {
-		println("scraping item: ", item.Name, item.Url)
+	for _, product := range products{
+		println("scraping product: ", product.Name, product.Url)
 
-		url, err := url.Parse(item.Url)
+		url, err := url.Parse(product.Url)
 		if err != nil {
             return err
 		}
 
-		price := new(models.Price)
-		price.ItemId = item.Id
+        var price models.Price
+		price.ProductId = product.Id
 		if strings.Contains(url.Host, "amazon") {
-			println("item type: amazon")
-			p := ScrapeAmazon(item.Url)
-			println("current item price: %s", p)
+			println("product type: amazon")
+			p := ScrapeAmazon(product.Url)
+			println("current product price: %s", p)
 			price.Amount = p
 		} else if strings.Contains(url.Host, "wayfair") {
-			println("item type: wayfair")
-			p := ScrapeWayfair(item.Url)
-			println("current item price: %s", p)
+			println("product type: wayfair")
+			p := ScrapeWayfair(product.Url)
+			println("current product price: %s", p)
 			price.Amount = p
 		}
 
-		println("storing item price in db")
+		println("storing product price in db")
         _, err = models.CreatePrice(price, ctx)
         if err != nil {
             return err

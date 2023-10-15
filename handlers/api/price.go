@@ -10,19 +10,19 @@ import (
 )
 
 func GetPrice(c echo.Context) error {
-	strId := c.QueryParam("id")
-	if strId == "" {
-        return echo.NewHTTPError(http.StatusFailedDependency, "invalid price")
+	id := c.Param("id")
+	if id == "" {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid price id")
         // Send DP
 	}
 
-	id, err := strconv.ParseInt(strId, 10, 64)
+	priceId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
         // Send DP
 	}
 
-	price, err := models.GetPrice(&id, c.Request().Context())
+	price, err := models.GetPrice(priceId, c.Request().Context())
 	if err != nil {
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
         // Send DP
@@ -38,7 +38,7 @@ func CreatePrice(c echo.Context) error {
         // Send DP
 	}
 
-	price, err := models.CreatePrice(&priceJSON, c.Request().Context())
+	price, err := models.CreatePrice(priceJSON, c.Request().Context())
 	if err != nil {
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
         // Send DP
@@ -48,19 +48,19 @@ func CreatePrice(c echo.Context) error {
 }
 
 func DeletePrice(c echo.Context) error {
-	strId := c.QueryParam("id")
-	if strId == "" {
-        return echo.NewHTTPError(http.StatusFailedDependency, "invalid price")
+	id := c.Param("id")
+	if id == "" {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid price id")
         // Send DP
 	}
 
-	id, err := strconv.ParseInt(strId, 10, 64)
+	priceId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
         // Send DP
 	}
 
-	if err := models.DeletePrice(id, c.Request().Context()); err != nil {
+	if err := models.DeletePrice(priceId, c.Request().Context()); err != nil {
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing price")
         // Send DP
 	}

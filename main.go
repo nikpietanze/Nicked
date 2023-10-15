@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -13,6 +15,7 @@ import (
 	"Nicked/handlers"
 	apiHandlers "Nicked/handlers/api"
 	"Nicked/middlewares"
+	"Nicked/models"
 	"Nicked/scraper"
 )
 
@@ -33,6 +36,7 @@ func main() {
 	e := echo.New()
 
 	db.Init()
+	initTables(context.Background())
 
 	templates := make(map[string]*template.Template)
 	templates["home.html"] = template.Must(template.ParseFiles("views/home.html", "views/layouts/base.html"))
@@ -48,13 +52,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.CORS())
 
-	scraperStarted := false
 	e.GET("/", func(c echo.Context) error {
-		if !scraperStarted {
-			scraper.Init()
-			scraperStarted = true
-		}
-
 		return c.Render(http.StatusOK, "home.html", map[string]interface{}{
 			"title": "Nicked",
 		})
@@ -67,35 +65,44 @@ func main() {
 	})
 
 	api := e.Group("/api")
-	{
-		// api middleware
-		api.Use(middlewares.Auth())
+	api.Use(middlewares.Auth())
 
-		api.POST("/analytics", handlers.CreateDataPoint)
+	api.POST("/analytics", handlers.CreateDataPoint)
 
-		user := api.Group("/user")
-		{
-			user.GET("/{id}", apiHandlers.GetUser)
-			user.POST("/", apiHandlers.CreateUser)
-			user.PUT("/", apiHandlers.UpdateUser)
-			user.DELETE("/{id}", apiHandlers.DeleteUser)
-		}
+    // Users
+    api.GET("/user/:id", apiHandlers.GetUser)
+	api.POST("/user", apiHandlers.CreateUser)
+	api.PUT("/user/:id", apiHandlers.UpdateUser)
+	api.DELETE("/user/:id", apiHandlers.DeleteUser)
 
-		item := api.Group("/item")
-		{
-			item.GET("/{id}", apiHandlers.GetItem)
-			item.POST("/", apiHandlers.CreateItem)
-			item.PUT("/", apiHandlers.UpdateItem)
-			item.DELETE("/{id}", apiHandlers.DeleteItem)
-		}
+    // Products
+    api.GET("/product", apiHandlers.GetProductBySku)
+    api.GET("/product/:id", apiHandlers.GetProduct)
+	api.POST("/product", apiHandlers.CreateProduct)
+	api.PUT("/product/:id", apiHandlers.UpdateProduct)
+	api.DELETE("/product/:id", apiHandlers.DeleteProduct)
 
-		price := api.Group("/price")
-		{
-			price.GET("/{id}", apiHandlers.GetPrice)
-			price.POST("/", apiHandlers.CreatePrice)
-			price.DELETE("/{id}", apiHandlers.DeletePrice)
-		}
-	}
+    // Prices
+    api.GET("/price/:id", apiHandlers.GetPrice)
+	api.POST("/price", apiHandlers.CreatePrice)
+	api.DELETE("/price/:id", apiHandlers.DeletePrice)
+
+	scraper.Init()
 
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func initTables(ctx context.Context) {
+	if err := models.InitAnalytics(ctx); err != nil {
+		log.Println(err)
+	}
+	if err := models.InitUser(ctx); err != nil {
+		log.Println(err)
+	}
+	if err := models.InitProduct(ctx); err != nil {
+		log.Println(err)
+	}
+	if err := models.InitPrice(ctx); err != nil {
+		log.Println(err)
+	}
 }

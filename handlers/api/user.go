@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -10,20 +11,22 @@ import (
 )
 
 func GetUser(c echo.Context) error {
-	strId := c.QueryParam("id")
-	if strId == "" {
-        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user")
+	id := c.Param("id")
+	if id == "" {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user id")
         // Send DP
 	}
 
-	id, err := strconv.ParseInt(strId, 10, 64)
+	userId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
+        log.Println(err)
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing user")
         // Send DP
 	}
 
-	user, getErr := models.GetUser(&id, c.Request().Context())
-	if getErr != nil {
+	user, err := models.GetUser(&userId, c.Request().Context())
+	if err != nil {
+        log.Println(err)
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing user")
         // Send DP
 	}
@@ -34,12 +37,14 @@ func GetUser(c echo.Context) error {
 func CreateUser(c echo.Context) error {
 	var userJSON models.User
 	if err := c.Bind(&userJSON); err != nil {
-        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user")
+        log.Println(err)
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user data")
         // Send DP
 	}
 
 	user, err := models.CreateUser(&userJSON, c.Request().Context())
 	if err != nil {
+        log.Println(err)
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing user")
         // Send DP
 	}
@@ -48,14 +53,30 @@ func CreateUser(c echo.Context) error {
 }
 
 func UpdateUser(c echo.Context) error {
-	var userJSON models.User
-	if err := c.Bind(&userJSON); err != nil {
-        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user")
+    id := c.Param("id")
+	if id == "" {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user id")
         // Send DP
 	}
 
+	userId, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+        log.Println(err)
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing user")
+        // Send DP
+	}
+
+	var userJSON models.User
+	if err := c.Bind(&userJSON); err != nil {
+        log.Println(err)
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user data")
+        // Send DP
+	}
+    userJSON.Id = userId
+
 	user, err := models.UpdateUser(&userJSON, c.Request().Context())
 	if err != nil {
+        log.Println(err)
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing user")
         // Send DP
 	}
@@ -64,19 +85,21 @@ func UpdateUser(c echo.Context) error {
 }
 
 func DeleteUser(c echo.Context) error {
-	strId := c.QueryParam("id")
-	if strId == "" {
-        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user")
+	id := c.Param("id")
+	if id == "" {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user id")
         // Send DP
 	}
 
-	id, err := strconv.ParseInt(strId, 10, 64)
+	userId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
+        log.Println(err)
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing user")
         // Send DP
 	}
 
-	if err := models.DeleteUser(id, c.Request().Context()); err != nil {
+	if err := models.DeleteUser(userId, c.Request().Context()); err != nil {
+        log.Println(err)
         return echo.NewHTTPError(http.StatusInternalServerError, "error processing user")
         // Send DP
 	}

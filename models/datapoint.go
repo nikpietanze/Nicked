@@ -4,7 +4,6 @@ import (
 	"Nicked/db"
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -36,10 +35,6 @@ func InitAnalytics(ctx context.Context) error {
 func CreateDataPoint(datapoint *DataPoint, ctx context.Context) error {
 	if datapoint == nil {
 		return errors.New("missing or invalid data point")
-	}
-
-	if err := InitAnalytics(ctx); err != nil {
-		log.Print(err)
 	}
 
 	_, err := db.Client.NewInsert().
