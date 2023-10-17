@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 
@@ -11,13 +12,18 @@ import (
 )
 
 type ProductJSON struct {
+	Email string
+	Name  string
+	Price []PriceJSON
+	Sku   string
+	Store string
+	Url   string
+}
+
+type PriceJSON struct {
+	Id       string
+	Amount   string
 	Currency string
-	Email    string
-	Name     string
-	Price    string
-	Sku      string
-	Store    string
-	Url      string
 }
 
 func GetProduct(c echo.Context) error {
@@ -44,51 +50,10 @@ func GetProduct(c echo.Context) error {
 	return c.JSON(http.StatusOK, product)
 }
 
-func GetProductBySku(c echo.Context) error {
-	sku := c.QueryParam("sku")
-	if sku == "" {
-		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product sku")
-		// TODO: Send DP
-	}
-
-	store := c.QueryParam("store")
-	if store == "" {
-		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product store")
-		// TODO: Send DP
-	}
-
-	email := c.QueryParam("email")
-	if email == "" {
-		return echo.NewHTTPError(http.StatusFailedDependency, "invalid user email")
-		// TODO: Send DP
-	}
-
-	user, err := models.GetUserByEmail(email, c.Request().Context())
-	if err != nil {
-		log.Println(err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "error processing email")
-		// TODO: Send DP
-	}
-
-	if user != nil {
-		product, err := models.GetProductBySku(sku, store, user.Id, c.Request().Context())
-		if err != nil {
-			log.Println(err)
-			return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
-			// TODO: Send DP
-		}
-
-		if product != nil {
-			return c.JSON(http.StatusOK, product)
-		}
-	}
-
-	return c.NoContent(http.StatusNotFound)
-}
-
 func CreateProduct(c echo.Context) error {
 	var productJSON ProductJSON
 	if err := c.Bind(&productJSON); err != nil {
+		log.Println(err)
 		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product")
 		// TODO: Send DP
 	}
@@ -100,11 +65,11 @@ func CreateProduct(c echo.Context) error {
 	}
 
 	productDTO := models.Product{
-		Name:   productJSON.Name,
+		Name:   strings.ToTitle(productJSON.Name),
 		Active: true,
 		Sku:    productJSON.Sku,
-		Store:  productJSON.Store,
-		Url:    productJSON.Url,
+		Store:  strings.ToLower(productJSON.Store),
+		Url:    strings.ToLower(productJSON.Url),
 		UserId: user.Id,
 	}
 
@@ -115,7 +80,7 @@ func CreateProduct(c echo.Context) error {
 		// TODO: Send DP
 	}
 
-	priceFlt, err := strconv.ParseFloat(productJSON.Price, 64)
+	priceFlt, err := strconv.ParseFloat(productJSON.Price[0].Amount, 64)
 	if err != nil {
 		log.Println(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product price")
@@ -124,7 +89,7 @@ func CreateProduct(c echo.Context) error {
 
 	priceDTO := models.Price{
 		Amount:    priceFlt,
-		Currency:  productJSON.Currency,
+		Currency:  productJSON.Price[0].Currency,
 		ProductId: product.Id,
 	}
 
@@ -139,91 +104,55 @@ func CreateProduct(c echo.Context) error {
 }
 
 func UpdateProduct(c echo.Context) error {
-	sku := c.Param("sku")
-	if sku == "" {
-		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product id")
-		// TODO: Send DP
+    id := c.Param("id")
+	if id == "" {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid product id")
+        // Send DP
 	}
 
-	store := c.QueryParam("store")
-	if store == "" {
-		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product store")
-		// TODO: Send DP
-	}
-
-	email := c.QueryParam("email")
-	if email == "" {
-		return echo.NewHTTPError(http.StatusFailedDependency, "invalid user email")
-		// TODO: Send DP
-	}
-
-	user, err := models.GetUserByEmail(email, c.Request().Context())
+	productId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "error processing email")
+        log.Println(err)
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
+        // Send DP
+	}
+
+    productJSON := models.Product{
+        Id: productId,
+    }
+
+	if err := c.Bind(&productJSON); err != nil {
+		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product data")
 		// TODO: Send DP
 	}
 
-	if user != nil {
-		var productJSON models.Product
-		if err := c.Bind(&productJSON); err != nil {
-			return echo.NewHTTPError(http.StatusFailedDependency, "invalid product data")
-			// TODO: Send DP
-		}
-		productJSON.Sku = sku
-		productJSON.Store = store
-		productJSON.UserId = user.Id
-
-		product, err := models.UpdateProduct(&productJSON, c.Request().Context())
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
-			// TODO: Send DP
-		}
-
-		return c.JSON(http.StatusOK, product)
+	product, err := models.UpdateProduct(&productJSON, c.Request().Context())
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
+		// TODO: Send DP
 	}
 
-	return c.NoContent(http.StatusNotFound)
+	return c.JSON(http.StatusOK, product)
 }
 
 func DeleteProduct(c echo.Context) error {
-	sku := c.Param("sku")
-	if sku == "" {
+	id := c.Param("id")
+	if id == "" {
 		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product id")
 		// TODO: Send DP
 	}
 
-	store := c.QueryParam("store")
-	if store == "" {
-		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product store")
-		// TODO: Send DP
-	}
-
-	email := c.QueryParam("email")
-	if email == "" {
-		return echo.NewHTTPError(http.StatusFailedDependency, "invalid user email")
-		// TODO: Send DP
-	}
-
-	user, err := models.GetUserByEmail(email, c.Request().Context())
+	productId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "error processing email")
+		log.Println(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
+		// Send DP
+	}
+
+	if err := models.DeleteProduct(productId, c.Request().Context()); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
 		// TODO: Send DP
 	}
 
-	if user != nil {
-		product, err := models.GetProductBySku(sku, store, user.Id, c.Request().Context())
-		if err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
-			// TODO: Send DP
-		}
-
-		if err := models.DeleteProduct(product.Id, c.Request().Context()); err != nil {
-			return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
-			// TODO: Send DP
-		}
-
-		return c.NoContent(http.StatusOK)
-	}
-
-	return c.NoContent(http.StatusNotFound)
+	return c.NoContent(http.StatusOK)
 }

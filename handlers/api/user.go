@@ -34,6 +34,23 @@ func GetUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+func GetUserByEmail(c echo.Context) error {
+	email := c.QueryParam("email")
+	if email == "" {
+        return echo.NewHTTPError(http.StatusFailedDependency, "invalid user email")
+        // Send DP
+	}
+
+	user, err := models.GetUserByEmail(email, c.Request().Context())
+	if err != nil {
+        log.Println(err)
+        return echo.NewHTTPError(http.StatusInternalServerError, "error processing user")
+        // Send DP
+	}
+
+	return c.JSON(http.StatusOK, user)
+}
+
 func CreateUser(c echo.Context) error {
 	var userJSON models.User
 	if err := c.Bind(&userJSON); err != nil {
@@ -66,13 +83,15 @@ func UpdateUser(c echo.Context) error {
         // Send DP
 	}
 
-	var userJSON models.User
+    userJSON := models.User{
+        Id: userId,
+    }
+
 	if err := c.Bind(&userJSON); err != nil {
         log.Println(err)
         return echo.NewHTTPError(http.StatusFailedDependency, "invalid user data")
         // Send DP
 	}
-    userJSON.Id = userId
 
 	user, err := models.UpdateUser(&userJSON, c.Request().Context())
 	if err != nil {

@@ -1,0 +1,21 @@
+@font-face {
+    font-family: "Gabarito";
+    src: url("../fonts/gabarito/gabarito.woff2") format("woff2"),
+         url("../fonts/gabarito/gabarito.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: "CevicheOne";
+    src: url("../fonts/ceviche-one/ceviche-one.woff2") format("woff2"),
+         url("../fonts/ceviche-one/ceviche-one.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: "Arcade";
+    src: url("../fonts/arcade/arcade.woff2") format("woff2"),
+         url("../fonts/arcade/arcade.woff") format("woff");
+    font-weight: normal;
+    font-style: normal;
+}
