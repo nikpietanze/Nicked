@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"errors"
-	"strings"
 	"time"
 
 	"Nicked/db"
@@ -147,8 +146,6 @@ func CreateProduct(product *Product, ctx context.Context) (*Product, error) {
 	if product == nil {
 		return nil, errors.New("invalid product data")
 	}
-
-	product.Name = strings.ToTitle(product.Name)
 
 	exists, err := db.Client.NewSelect().
 		Model((*Product)(nil)).

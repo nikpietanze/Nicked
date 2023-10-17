@@ -38,6 +38,7 @@ func main() {
 	db.Init()
 	initTables(context.Background())
 
+    // Templates
 	templates := make(map[string]*template.Template)
 	templates["home.html"] = template.Must(template.ParseFiles("views/home.html", "views/layouts/base.html"))
 	templates["privacy.html"] = template.Must(template.ParseFiles("views/privacy.html", "views/layouts/base.html"))
@@ -46,47 +47,50 @@ func main() {
 		templates: templates,
 	}
 
+    // Static Files
 	e.Static("/static", "public")
 
-	// global middleware
+	// Global Middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.CORS())
 
+    // Website Routes
 	e.GET("/", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "home.html", map[string]interface{}{
 			"title": "Nicked",
 		})
 	})
-
 	e.GET("/privacy", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "privacy.html", map[string]interface{}{
 			"title": "Privacy Policy | Nicked",
 		})
 	})
 
+    // API Routes
 	api := e.Group("/api")
 	api.Use(middlewares.Auth())
 
 	api.POST("/analytics", handlers.CreateDataPoint)
 
-    // Users
+    // /api/users
     api.GET("/user/:id", apiHandlers.GetUser)
+    api.GET("/user", apiHandlers.GetUserByEmail)
 	api.POST("/user", apiHandlers.CreateUser)
 	api.PUT("/user/:id", apiHandlers.UpdateUser)
 	api.DELETE("/user/:id", apiHandlers.DeleteUser)
 
-    // Products
-    api.GET("/product", apiHandlers.GetProductBySku)
+    // /api/products
     api.GET("/product/:id", apiHandlers.GetProduct)
 	api.POST("/product", apiHandlers.CreateProduct)
 	api.PUT("/product/:id", apiHandlers.UpdateProduct)
 	api.DELETE("/product/:id", apiHandlers.DeleteProduct)
 
-    // Prices
+    // /api/prices
     api.GET("/price/:id", apiHandlers.GetPrice)
 	api.POST("/price", apiHandlers.CreatePrice)
 	api.DELETE("/price/:id", apiHandlers.DeletePrice)
 
+    // Scraper
 	scraper.Init()
 
 	e.Logger.Fatal(e.Start(":8080"))
