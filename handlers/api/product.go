@@ -7,17 +7,20 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"Nicked/models"
 )
 
 type ProductJSON struct {
-	Email string
-	Name  string
-	Price []PriceJSON
-	Sku   string
-	Store string
-	Url   string
+	Email    string
+	Name     string
+	ImageUrl string
+	Price    []PriceJSON
+	Sku      string
+	Store    string
+	Url      string
 }
 
 type PriceJSON struct {
@@ -64,13 +67,16 @@ func CreateProduct(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
 	}
 
+	caser := cases.Title(language.English)
+
 	productDTO := models.Product{
-		Name:   strings.ToTitle(productJSON.Name),
-		Active: true,
-		Sku:    productJSON.Sku,
-		Store:  strings.ToLower(productJSON.Store),
-		Url:    strings.ToLower(productJSON.Url),
-		UserId: user.Id,
+		Name:     caser.String(productJSON.Name),
+		ImageUrl: productJSON.ImageUrl,
+		Active:   true,
+		Sku:      productJSON.Sku,
+		Store:    strings.ToLower(productJSON.Store),
+		Url:      strings.ToLower(productJSON.Url),
+		UserId:   user.Id,
 	}
 
 	product, err := models.CreateProduct(&productDTO, c.Request().Context())
@@ -104,22 +110,22 @@ func CreateProduct(c echo.Context) error {
 }
 
 func UpdateProduct(c echo.Context) error {
-    id := c.Param("id")
+	id := c.Param("id")
 	if id == "" {
-        return echo.NewHTTPError(http.StatusFailedDependency, "invalid product id")
-        // Send DP
+		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product id")
+		// Send DP
 	}
 
 	productId, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-        log.Println(err)
-        return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
-        // Send DP
+		log.Println(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
+		// Send DP
 	}
 
-    productJSON := models.Product{
-        Id: productId,
-    }
+	productJSON := models.Product{
+		Id: productId,
+	}
 
 	if err := c.Bind(&productJSON); err != nil {
 		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product data")

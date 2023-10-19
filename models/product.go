@@ -11,6 +11,7 @@ import (
 type Product struct {
 	Id        int64     `bun:"id,pk,autoincrement"`
 	Active    bool      `bun:",notnull"`
+	ImageUrl  string    `bun:",notnull"`
 	Name      string    `bun:",notnull"`
 	Prices    []*Price  `bun:"rel:has-many,join:id=product_id"`
 	Sku       string    `bun:",notnull"`
