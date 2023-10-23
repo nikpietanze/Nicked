@@ -19,8 +19,6 @@ var Scraper *colly.Collector
 
 func Init() {
 	return
-	println("starting scraper process")
-
 	Scraper = colly.NewCollector()
 
 	s := gocron.NewScheduler(time.UTC)
@@ -32,7 +30,6 @@ func Init() {
 
 func Scrape() error {
     ctx := context.Background()
-	println("starting automated scraping process")
 
 	products, err := models.GetActiveProducts(ctx)
 	if err != nil {
@@ -40,8 +37,6 @@ func Scrape() error {
 	}
 
 	for _, product := range products{
-		println("scraping product: ", product.Name, product.Url)
-
 		url, err := url.Parse(product.Url)
 		if err != nil {
             return err
@@ -50,21 +45,31 @@ func Scrape() error {
         var price models.Price
 		price.ProductId = product.Id
 		if strings.Contains(url.Host, "amazon") {
-			println("product type: amazon")
 			p := ScrapeAmazon(product.Url)
-			println("current product price: %s", p)
 			price.Amount = p
 		} else if strings.Contains(url.Host, "wayfair") {
-			println("product type: wayfair")
 			p := ScrapeWayfair(product.Url)
-			println("current product price: %s", p)
 			price.Amount = p
 		}
 
-		println("storing product price in db")
+        lastPrice, err := models.GetLatestPriceByProduct(product.Id, ctx)
+        if (err != nil) {
+            return err
+        }
+
         _, err = models.CreatePrice(price, ctx)
         if err != nil {
             return err
+        }
+
+        if (product.OnSale && price.Amount == lastPrice.Amount) {
+            return nil
+        } else {
+            product.OnSale = price.Amount < lastPrice.Amount;
+            _, err := models.UpdateProduct(&product, ctx)
+            if (err != nil) {
+                return err
+            }
         }
 	}
     return nil
