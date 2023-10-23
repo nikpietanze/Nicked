@@ -42,6 +42,7 @@ func main() {
 	templates := make(map[string]*template.Template)
 	templates["home.html"] = template.Must(template.ParseFiles("views/home.html", "views/layouts/base.html"))
 	templates["privacy.html"] = template.Must(template.ParseFiles("views/privacy.html", "views/layouts/base.html"))
+	templates["info/sales-and-discounts-tracking/v1.html"] = template.Must(template.ParseFiles("views/info/sales-and-discounts-tracking/v1.html", "views/layouts/base.html"))
 
 	e.Renderer = &TemplateRegistry{
 		templates: templates,
@@ -65,6 +66,15 @@ func main() {
 			"title": "Privacy Policy | Nicked",
 		})
 	})
+
+    // Info Routes
+    info := e.Group("/info")
+    info.GET("/sales-and-discounts-tracking", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "info/sales-and-discounts-tracking/v1.html", map[string]interface{}{
+			"title": "Save More, Shop Smarter: The Power of a Sales and Discount Tracker!",
+            "description": "Discover the Ultimate Sales and Discount Tracker for Amazon Shoppers! Maximize Savings, Stay Organized, and Never Miss a Deal. Your Must-Have Companion for a Smarter Amazon Shopping Experience. Start Supercharging Your Savings Today!",
+		})
+    })
 
     // API Routes
 	api := e.Group("/api")
