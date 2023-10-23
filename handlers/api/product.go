@@ -17,6 +17,7 @@ type ProductJSON struct {
 	Email    string
 	Name     string
 	ImageUrl string
+	OnSale   bool
 	Price    []PriceJSON
 	Sku      string
 	Store    string
@@ -73,6 +74,7 @@ func CreateProduct(c echo.Context) error {
 		Name:     caser.String(productJSON.Name),
 		ImageUrl: productJSON.ImageUrl,
 		Active:   true,
+		OnSale:   productJSON.OnSale || false,
 		Sku:      productJSON.Sku,
 		Store:    strings.ToLower(productJSON.Store),
 		Url:      strings.ToLower(productJSON.Url),

@@ -13,6 +13,7 @@ type Product struct {
 	Active    bool      `bun:",notnull"`
 	ImageUrl  string    `bun:",notnull"`
 	Name      string    `bun:",notnull"`
+	OnSale    bool      `bun:",notnull"`
 	Prices    []*Price  `bun:"rel:has-many,join:id=product_id"`
 	Sku       string    `bun:",notnull"`
 	Store     string    `bun:",notnull"`
