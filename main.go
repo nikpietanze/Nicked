@@ -5,7 +5,6 @@ import (
 	"errors"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -36,9 +35,14 @@ func main() {
 	e := echo.New()
 
 	db.Init()
-	initTables(context.Background())
+	db.Client.RegisterModel((*models.UserToProduct)(nil))
 
-    // Templates
+	err := createSchema(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	// Templates
 	templates := make(map[string]*template.Template)
 	templates["home.html"] = template.Must(template.ParseFiles("views/home.html", "views/layouts/base.html"))
 	templates["privacy.html"] = template.Must(template.ParseFiles("views/privacy.html", "views/layouts/base.html"))
@@ -48,14 +52,14 @@ func main() {
 		templates: templates,
 	}
 
-    // Static Files
+	// Static Files
 	e.Static("/static", "public")
 
 	// Global Middleware
 	//e.Use(middleware.Logger())
 	e.Use(middleware.CORS())
 
-    // Website Routes
+	// Website Routes
 	e.GET("/", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "home.html", map[string]interface{}{
 			"title": "Nicked",
@@ -67,56 +71,66 @@ func main() {
 		})
 	})
 
-    // Info Routes
-    info := e.Group("/info")
-    info.GET("/sales-and-discounts-tracking", func(c echo.Context) error {
+	// Info Routes
+	info := e.Group("/info")
+	info.GET("/sales-and-discounts-tracking", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "info/sales-and-discounts-tracking/v1.html", map[string]interface{}{
-			"title": "Save More, Shop Smarter: The Power of a Sales and Discount Tracker!",
-            "description": "Discover the Ultimate Sales and Discount Tracker for Amazon Shoppers! Maximize Savings, Stay Organized, and Never Miss a Deal. Your Must-Have Companion for a Smarter Amazon Shopping Experience. Start Supercharging Your Savings Today!",
+			"title":       "Save More, Shop Smarter: The Power of a Sales and Discount Tracker!",
+			"description": "Discover the Ultimate Sales and Discount Tracker for Amazon Shoppers! Maximize Savings, Stay Organized, and Never Miss a Deal. Your Must-Have Companion for a Smarter Amazon Shopping Experience. Start Supercharging Your Savings Today!",
 		})
-    })
+	})
 
-    // API Routes
+	// API Routes
 	api := e.Group("/api")
 	api.Use(middlewares.Auth())
 
 	api.POST("/analytics", handlers.CreateDataPoint)
 
-    // /api/users
-    api.GET("/user/:id", apiHandlers.GetUser)
-    api.GET("/user", apiHandlers.GetUserByEmail)
+	// /api/users
+	api.GET("/user/:id", apiHandlers.GetUser)
+	api.GET("/user", apiHandlers.GetUserByEmail)
 	api.POST("/user", apiHandlers.CreateUser)
 	api.PUT("/user/:id", apiHandlers.UpdateUser)
 	api.DELETE("/user/:id", apiHandlers.DeleteUser)
 
-    // /api/products
-    api.GET("/product/:id", apiHandlers.GetProduct)
+	// /api/products
+	api.GET("/product/:id", apiHandlers.GetProduct)
 	api.POST("/product", apiHandlers.CreateProduct)
 	api.PUT("/product/:id", apiHandlers.UpdateProduct)
 	api.DELETE("/product/:id", apiHandlers.DeleteProduct)
 
-    // /api/prices
-    api.GET("/price/:id", apiHandlers.GetPrice)
+	// /api/products
+	api.PUT("/product/:id", apiHandlers.UpdateProductSetting)
+
+	// /api/prices
+	api.GET("/price/:id", apiHandlers.GetPrice)
 	api.POST("/price", apiHandlers.CreatePrice)
 	api.DELETE("/price/:id", apiHandlers.DeletePrice)
 
-    // Scraper
+	// Scraper
 	scraper.Init()
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
 
-func initTables(ctx context.Context) {
-	if err := models.InitAnalytics(ctx); err != nil {
-		log.Println(err)
+func createSchema(ctx context.Context) error {
+	models := []interface{}{
+		(*models.User)(nil),
+		(*models.Product)(nil),
+		(*models.UserToProduct)(nil),
+		(*models.ProductSetting)(nil),
+		(*models.Price)(nil),
+		(*models.DataPoint)(nil),
 	}
-	if err := models.InitUser(ctx); err != nil {
-		log.Println(err)
+
+	for _, model := range models {
+		if _, err := db.Client.NewCreateTable().
+			Model(model).
+			IfNotExists().
+			Exec(ctx); err != nil {
+			return err
+		}
 	}
-	if err := models.InitProduct(ctx); err != nil {
-		log.Println(err)
-	}
-	if err := models.InitPrice(ctx); err != nil {
-		log.Println(err)
-	}
+
+	return nil
 }

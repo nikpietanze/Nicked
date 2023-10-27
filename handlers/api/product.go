@@ -22,6 +22,7 @@ type ProductJSON struct {
 	Sku      string
 	Store    string
 	Url      string
+	UserId   int64
 }
 
 type PriceJSON struct {
@@ -62,26 +63,46 @@ func CreateProduct(c echo.Context) error {
 		// TODO: Send DP
 	}
 
-	user, err := models.GetUserByEmail(productJSON.Email, c.Request().Context())
+	caser := cases.Title(language.English)
+
+	product, err := models.CreateProduct(
+		&models.Product{
+			Name:     caser.String(productJSON.Name),
+			ImageUrl: productJSON.ImageUrl,
+			OnSale:   productJSON.OnSale || false,
+			Sku:      productJSON.Sku,
+			Store:    strings.ToLower(productJSON.Store),
+			Url:      strings.ToLower(productJSON.Url),
+		},
+		c.Request().Context(),
+	)
 	if err != nil {
 		log.Println(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
+		// TODO: Send DP
 	}
 
-	caser := cases.Title(language.English)
-
-	productDTO := models.Product{
-		Name:     caser.String(productJSON.Name),
-		ImageUrl: productJSON.ImageUrl,
-		Active:   true,
-		OnSale:   productJSON.OnSale || false,
-		Sku:      productJSON.Sku,
-		Store:    strings.ToLower(productJSON.Store),
-		Url:      strings.ToLower(productJSON.Url),
-		UserId:   user.Id,
+    _, err = models.CreateUserToProduct(
+        &models.UserToProduct{
+            ProductId: product.Id,
+            UserId: productJSON.UserId,
+        },
+        c.Request().Context(),
+    )
+	if err != nil {
+		log.Println(err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
+		// TODO: Send DP
 	}
 
-	product, err := models.CreateProduct(&productDTO, c.Request().Context())
+	_, err = models.CreateProductSetting(
+		&models.ProductSetting{
+			Active:    true,
+			ProductId: product.Id,
+			UserId:    productJSON.UserId,
+		},
+		c.Request().Context(),
+	)
 	if err != nil {
 		log.Println(err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "error processing product")
@@ -126,8 +147,8 @@ func UpdateProduct(c echo.Context) error {
 	}
 
 	productJSON := models.Product{
-        Id: productId,
-    };
+		Id: productId,
+	}
 
 	if err := c.Bind(&productJSON); err != nil {
 		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product data")
