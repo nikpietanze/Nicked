@@ -93,6 +93,8 @@ func UpdateUser(c echo.Context) error {
         // Send DP
 	}
 
+    log.Println(userJSON)
+
 	user, err := models.UpdateUser(&userJSON, c.Request().Context())
 	if err != nil {
         log.Println(err)

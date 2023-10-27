@@ -126,8 +126,8 @@ func UpdateProduct(c echo.Context) error {
 	}
 
 	productJSON := models.Product{
-		Id: productId,
-	}
+        Id: productId,
+    };
 
 	if err := c.Bind(&productJSON); err != nil {
 		return echo.NewHTTPError(http.StatusFailedDependency, "invalid product data")

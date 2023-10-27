@@ -52,7 +52,7 @@ func main() {
 	e.Static("/static", "public")
 
 	// Global Middleware
-	e.Use(middleware.Logger())
+	//e.Use(middleware.Logger())
 	e.Use(middleware.CORS())
 
     // Website Routes
