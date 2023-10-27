@@ -189,11 +189,8 @@ func UpdateProduct(product *Product, ctx context.Context) (*Product, error) {
 	product.UpdatedAt = time.Now()
 	_, err := db.Client.NewUpdate().
 		Model(product).
-		Where("sku = ?", product.Sku).
-		Where("store = ?", product.Store).
-		Where("user_id = ?", product.UserId).
 		Column("active", "updated_at").
-		OmitZero().
+        Where("id = ?", product.Id).
 		Exec(ctx)
 	if err != nil {
 		return nil, err
