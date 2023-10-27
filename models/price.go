@@ -15,18 +15,6 @@ type Price struct {
 	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-func InitPrice(ctx context.Context) error {
-	_, err := db.Client.NewCreateTable().
-		Model((*Price)(nil)).
-		IfNotExists().
-		ForeignKey(`("product_id") REFERENCES "products" ("id") ON DELETE CASCADE`).
-		Exec(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetPrice(id int64, ctx context.Context) (*Price, error) {
 	price := new(Price)
 	err := db.Client.NewSelect().

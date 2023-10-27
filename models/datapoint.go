@@ -21,17 +21,6 @@ type DataPoint struct {
 	CreatedAt     time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-func InitAnalytics(ctx context.Context) error {
-	_, err := db.Client.NewCreateTable().
-		Model((*DataPoint)(nil)).
-		IfNotExists().
-		Exec(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func CreateDataPoint(datapoint *DataPoint, ctx context.Context) error {
 	if datapoint == nil {
 		return errors.New("missing or invalid data point")

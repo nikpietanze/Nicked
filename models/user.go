@@ -10,23 +10,13 @@ import (
 )
 
 type User struct {
-	Id            int64      `bun:"id,pk,autoincrement"`
-	Email         string     `bun:",notnull"`
-	EmailAlerts   bool       `bun:",notnull"`
-	Products      []*Product `bun:"rel:has-many,join:id=user_id"`
-	CreatedAt     time.Time  `bun:",nullzero,notnull,default:current_timestamp"`
-	UpdatedAt     time.Time  `bun:",nullzero,notnull,default:current_timestamp"`
-}
-
-func InitUser(ctx context.Context) error {
-	_, err := db.Client.NewCreateTable().
-		Model((*User)(nil)).
-		IfNotExists().
-		Exec(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+	Id              int64            `bun:"id,pk,autoincrement"`
+	Email           string           `bun:",notnull"`
+	EmailAlerts     bool             `bun:",notnull"`
+	Products        []Product        `bun:"m2m:user_to_products,join:User=Product"`
+	ProductSettings []ProductSetting `bun:"rel:has-many,join:id=user_id"`
+	CreatedAt       time.Time        `bun:",nullzero,notnull,default:current_timestamp"`
+	UpdatedAt       time.Time        `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
 func GetUser(id *int64, ctx context.Context) (*User, error) {
@@ -39,6 +29,7 @@ func GetUser(id *int64, ctx context.Context) (*User, error) {
 		Model(user).
 		Where("id = ?", id).
 		Relation("Products").
+		Relation("ProductSettings").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -56,10 +47,12 @@ func GetUserByEmail(email string, ctx context.Context) (*User, error) {
 		Model(user).
 		Where("email = ?", email).
 		Relation("Products").
+		Relation("ProductSettings").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return user, nil
 }
 
@@ -69,7 +62,7 @@ func CreateUser(user *User, ctx context.Context) (*User, error) {
 	}
 
 	user.Email = strings.ToLower(user.Email)
-    user.EmailAlerts = true;
+	user.EmailAlerts = true
 
 	exists, err := db.Client.NewSelect().
 		Model((*User)(nil)).
@@ -82,7 +75,6 @@ func CreateUser(user *User, ctx context.Context) (*User, error) {
 	if !exists {
 		_, err := db.Client.NewInsert().
 			Model(user).
-			Ignore().
 			Exec(ctx)
 		if err != nil {
 			return nil, err

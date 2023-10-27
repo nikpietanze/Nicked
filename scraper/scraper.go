@@ -31,7 +31,7 @@ func Init() {
 func Scrape() error {
     ctx := context.Background()
 
-	products, err := models.GetActiveProducts(ctx)
+	products, err := models.GetAllProducts(ctx)
 	if err != nil {
         return err
 	}
@@ -52,10 +52,7 @@ func Scrape() error {
 			price.Amount = p
 		}
 
-        lastPrice, err := models.GetLatestPriceByProduct(product.Id, ctx)
-        if (err != nil) {
-            return err
-        }
+        lastPrice := product.Prices[len(product.Prices)-1]
 
         _, err = models.CreatePrice(price, ctx)
         if err != nil {

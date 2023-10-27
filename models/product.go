@@ -10,29 +10,16 @@ import (
 
 type Product struct {
 	Id        int64     `bun:"id,pk,autoincrement"`
-	Active    bool      `bun:",notnull"`
 	ImageUrl  string    `bun:",notnull"`
 	Name      string    `bun:",notnull"`
 	OnSale    bool      `bun:",notnull"`
-	Prices    []*Price  `bun:"rel:has-many,join:id=product_id"`
+	Prices    []Price   `bun:"rel:has-many,join:id=product_id"`
 	Sku       string    `bun:",notnull"`
 	Store     string    `bun:",notnull"`
 	Url       string    `bun:",notnull"`
-	UserId    int64     `bun:",notnull"`
+	Users     []User    `bun:"m2m:user_to_products,join:Product=User"`
 	CreatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
-}
-
-func InitProduct(ctx context.Context) error {
-	_, err := db.Client.NewCreateTable().
-		Model((*Product)(nil)).
-		IfNotExists().
-		ForeignKey(`("user_id") REFERENCES "users" ("id") ON DELETE CASCADE`).
-		Exec(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func GetProduct(id int64, ctx context.Context) (*Product, error) {
@@ -48,13 +35,12 @@ func GetProduct(id int64, ctx context.Context) (*Product, error) {
 	return product, nil
 }
 
-func GetProductBySku(sku string, store string, userId int64, ctx context.Context) (*Product, error) {
+func GetProductBySku(sku string, store string, ctx context.Context) (*Product, error) {
 	product := new(Product)
 	err := db.Client.NewSelect().
 		Model(product).
 		Where("sku = ?", sku).
 		Where("store = ?", store).
-		Where("user_id = ?", userId).
 		Relation("Prices").
 		Scan(ctx)
 	if err != nil {
@@ -63,85 +49,18 @@ func GetProductBySku(sku string, store string, userId int64, ctx context.Context
 	return product, nil
 }
 
-func GetActiveProducts(ctx context.Context) ([]Product, error) {
+func GetAllProducts(ctx context.Context) ([]Product, error) {
 	var products []Product
 	err := db.Client.NewSelect().
 		Model(&products).
-		Where("active = ?", true).
+        Relation("Prices").
+		Relation("Users").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return products, nil
-}
-
-func GetProductsByUser(id *int64, email string, ctx context.Context) ([]Product, error) {
-	if id == nil && email == "" {
-		return nil, errors.New("invalid user id and/or email")
-	}
-
-	user := new(User)
-	if id != nil {
-		usr, err := GetUser(id, ctx)
-		if err != nil {
-			panic(err)
-		}
-		user = usr
-	} else if email != "" {
-		usr, err := GetUserByEmail(email, ctx)
-		if err != nil {
-			panic(err)
-		}
-		user = usr
-	}
-
-	var products []Product
-	err := db.Client.NewSelect().
-		Model(&products).
-		Where("user_id = ?", user.Id).
-		Relation("Prices").
-		Scan(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return products, nil
-}
-
-func GetLastProductByUser(id *int64, email string, ctx context.Context) (*Product, error) {
-	if id == nil && email == "" {
-		return nil, errors.New("invalid user id and/or email")
-	}
-
-	user := new(User)
-	if id != nil {
-		usr, err := GetUser(id, ctx)
-		if err != nil {
-			panic(err)
-		}
-		user = usr
-	} else if email != "" {
-		usr, err := GetUserByEmail(email, ctx)
-		if err != nil {
-			panic(err)
-		}
-		user = usr
-	}
-
-	var product Product
-	err := db.Client.NewSelect().
-		Model(&product).
-		Where("user_id = ?", user.Id).
-		Relation("Prices").
-		Order("created_at DESC").
-		Limit(1).
-		Scan(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &product, nil
 }
 
 func CreateProduct(product *Product, ctx context.Context) (*Product, error) {
@@ -153,7 +72,6 @@ func CreateProduct(product *Product, ctx context.Context) (*Product, error) {
 		Model((*Product)(nil)).
 		Where("sku = ?", product.Sku).
 		Where("store = ?", product.Store).
-		Where("user_id = ?", product.UserId).
 		Exists(ctx)
 	if err != nil {
 		return nil, err
@@ -167,13 +85,14 @@ func CreateProduct(product *Product, ctx context.Context) (*Product, error) {
 			return nil, err
 		}
 
-		newProduct, err := GetLastProductByUser(&product.UserId, "", ctx)
+		newProduct, err := GetProductBySku(product.Sku, product.Store, ctx)
 		if err != nil {
 			return nil, err
 		}
+
 		return newProduct, nil
 	} else {
-		newProduct, err := GetProductBySku(product.Sku, product.Store, product.UserId, ctx)
+		newProduct, err := GetProductBySku(product.Sku, product.Store, ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +109,7 @@ func UpdateProduct(product *Product, ctx context.Context) (*Product, error) {
 	_, err := db.Client.NewUpdate().
 		Model(product).
 		Column("active", "updated_at").
-        Where("id = ?", product.Id).
+		Where("id = ?", product.Id).
 		Exec(ctx)
 	if err != nil {
 		return nil, err
