@@ -12,20 +12,21 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/gocolly/colly/v2"
 
+	"nicked.io/emailer"
 	"nicked.io/models"
 )
 
 var Scraper *colly.Collector
 
 func Init() {
-	return
 	Scraper = colly.NewCollector()
 
 	s := gocron.NewScheduler(time.UTC)
-	_, err := s.Every(2).Minutes().Do(Scrape)
+	_, err := s.Every(10).Minutes().Do(Scrape)
 	if err != nil {
 		log.Println(err)
 	}
+    s.StartAsync()
 }
 
 func Scrape() error {
@@ -63,9 +64,18 @@ func Scrape() error {
             return nil
         } else {
             product.OnSale = price.Amount < lastPrice.Amount;
+
             _, err := models.UpdateProduct(&product, ctx)
             if (err != nil) {
                 return err
+            }
+
+            if (product.OnSale) {
+                for i := 0; i < len(product.Users); i++ {
+                    user := product.Users[i]
+                    // TODO: make sure the user has this product set to active
+                    emailer.SendSaleEmail(user.Email, product)
+                }
             }
         }
 	}
