@@ -10,12 +10,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"Nicked/db"
-	"Nicked/handlers"
-	apiHandlers "Nicked/handlers/api"
-	"Nicked/middlewares"
-	"Nicked/models"
-	"Nicked/scraper"
+	"nicked.io/db"
+	"nicked.io/handlers"
+	apiHandlers "nicked.io/handlers/api"
+	"nicked.io/middlewares"
+	"nicked.io/models"
+	"nicked.io/scraper"
 )
 
 type TemplateRegistry struct {

@@ -10,7 +10,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"Nicked/models"
+	"nicked.io/models"
 )
 
 type ProductJSON struct {

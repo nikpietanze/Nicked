@@ -1,12 +1,13 @@
 package models
 
 import (
-	"Nicked/db"
 	"context"
 	"errors"
 	"time"
 
 	"github.com/uptrace/bun"
+
+	"nicked.io/db"
 )
 
 type DataPoint struct {

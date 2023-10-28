@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"Nicked/models"
+	"nicked.io/models"
 )
 
 func GetPrice(c echo.Context) error {

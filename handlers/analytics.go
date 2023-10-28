@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"Nicked/models"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+
+	"nicked.io/models"
 )
 
 func CreateDataPoint(c echo.Context) error {

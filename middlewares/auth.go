@@ -1,11 +1,12 @@
 package middlewares
 
 import (
-	"Nicked/config"
 	"crypto/subtle"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	"nicked.io/config"
 )
 
 func Auth() echo.MiddlewareFunc {

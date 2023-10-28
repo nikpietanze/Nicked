@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"Nicked/db"
+	"nicked.io/db"
 )
 
 type User struct {

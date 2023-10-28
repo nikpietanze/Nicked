@@ -7,7 +7,7 @@ import (
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
 
-	"Nicked/config"
+	"nicked.io/config"
 )
 
 var Client *bun.DB

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"Nicked/db"
+	"nicked.io/db"
 )
 
 type Product struct {

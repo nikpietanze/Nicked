@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"Nicked/db"
+	"nicked.io/db"
 )
 
 type Price struct {

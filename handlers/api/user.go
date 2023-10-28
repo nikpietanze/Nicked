@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"Nicked/models"
+	"nicked.io/models"
 )
 
 func GetUser(c echo.Context) error {

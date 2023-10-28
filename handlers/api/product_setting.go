@@ -7,7 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"Nicked/models"
+	"nicked.io/models"
 )
 
 func UpdateProductSetting(c echo.Context) error {

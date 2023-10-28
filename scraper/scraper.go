@@ -12,7 +12,7 @@ import (
 	"github.com/go-co-op/gocron"
 	"github.com/gocolly/colly/v2"
 
-	"Nicked/models"
+	"nicked.io/models"
 )
 
 var Scraper *colly.Collector

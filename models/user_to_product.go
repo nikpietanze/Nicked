@@ -1,10 +1,11 @@
 package models
 
 import (
-	"Nicked/db"
 	"context"
 	"errors"
 	"log"
+
+	"nicked.io/db"
 )
 
 type UserToProduct struct {
