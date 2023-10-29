@@ -11,7 +11,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"nicked.io/db"
-	"nicked.io/emailer"
 	"nicked.io/handlers"
 	apiHandlers "nicked.io/handlers/api"
 	"nicked.io/middlewares"

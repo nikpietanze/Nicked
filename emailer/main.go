@@ -2,7 +2,6 @@ package emailer
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/smtp"
 	"os"
@@ -22,31 +21,18 @@ func SendSaleEmail(recipient string, product models.Product) {
 		panic(err)
 	}
 
-	html, err := os.Open(dir + "/emailer/templates/price-drop.html")
+	html, err := os.ReadFile(dir + "/emailer/templates/price-drop.html")
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		if err := html.Close(); err != nil {
-			panic(err)
-		}
-	}()
 
-	buf := make([]byte, 1024)
-	for {
-		n, err := html.Read(buf)
-		if err != nil && err != io.EOF {
-			panic(err)
-		}
-		if n == 0 {
-			break
-		}
-	}
-
-	body := string(buf)
+	body := string(html)
+    //body = strings.ReplaceAll(body, "{{logo_url}}", "https://nicked.io/static/img/logo.png")
+    body = strings.ReplaceAll(body, "{{logo_url}}", "https://ebhsrec.stripocdn.email/content/guids/CABINET_6d4f2213bba54903a0d6ab253b3f66b9077afefa2804034a2e515cf9737a4f9e/images/group_36.png")
     body = strings.ReplaceAll(body, "{{product_img_url}}", product.ImageUrl)
 	body = strings.ReplaceAll(body, "{{product_name}}", product.Name)
 	body = strings.ReplaceAll(body, "{{product_price}}", "$"+price)
+    body = strings.ReplaceAll(body, "{{product_url}}", product.Url)
 
 	subject := fmt.Sprintf("Price Drop Alert: %s", product.Name)
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
