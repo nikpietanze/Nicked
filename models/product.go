@@ -108,7 +108,7 @@ func UpdateProduct(product *Product, ctx context.Context) (*Product, error) {
 	product.UpdatedAt = time.Now()
 	_, err := db.Client.NewUpdate().
 		Model(product).
-		Column("active", "updated_at").
+		Column("on_sale", "updated_at").
 		Where("id = ?", product.Id).
 		Exec(ctx)
 	if err != nil {
