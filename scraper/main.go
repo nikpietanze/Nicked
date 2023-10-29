@@ -32,14 +32,12 @@ func Init() {
 func Scrape() {
     ctx := context.Background()
 
-    log.Println("getting all products")
 	products, err := models.GetAllProducts(ctx)
 	if err != nil {
         log.Panic(err)
 	}
 
-	for i, product := range products{
-        log.Println("scraping " + product.Name + "; " + strconv.FormatInt(int64(i), 10) + " of " + strconv.FormatInt(int64(len(products)), 10))
+	for _, product := range products{
 		url, err := url.Parse(product.Url)
 		if err != nil {
             log.Panic(err)
@@ -55,10 +53,7 @@ func Scrape() {
 			price.Amount = p
 		}
 
-        log.Println("scraped price: " + strconv.FormatFloat(price.Amount, 'f', -1, 64))
-
         lastPrice := product.Prices[len(product.Prices)-1]
-        log.Println("last price: " + strconv.FormatFloat(lastPrice.Amount, 'f', -1, 64))
 
         _, err = models.CreatePrice(price, ctx)
         if err != nil {
@@ -69,21 +64,25 @@ func Scrape() {
             log.Panic(err)
         } else {
             product.OnSale = price.Amount < lastPrice.Amount;
-            log.Println("updating product")
 
             _, err := models.UpdateProduct(&product, ctx)
             if (err != nil) {
                 log.Panic(err)
             }
-            log.Println("sending email")
 
-            //if (product.OnSale) {
+            if (product.OnSale) {
                 for i := 0; i < len(product.Users); i++ {
                     user := product.Users[i]
-                    // TODO: make sure the user has this product set to active
-                    emailer.SendSaleEmail(user.Email, product)
+                    productSetting, err := models.GetProductSetting(user.Id, product.Id, ctx)
+                    if (err != nil) {
+                        log.Panic(err)
+                    }
+
+                    if (productSetting.Active) {
+                        emailer.SendSaleEmail(user.Email, product)
+                    }
                 }
-            //}
+            }
         }
 	}
 }

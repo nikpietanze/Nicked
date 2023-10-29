@@ -17,7 +17,20 @@ type ProductSetting struct {
 	UpdatedAt time.Time `bun:",nullzero,notnull,default:current_timestamp"`
 }
 
-func GetProductSetting(id int64, ctx context.Context) (*ProductSetting, error) {
+func GetProductSetting(userId int64, productId int64, ctx context.Context) (*ProductSetting, error) {
+	productSetting := new(ProductSetting)
+	err := db.Client.NewSelect().
+		Model(productSetting).
+		Where("user_id = ?", userId).
+		Where("product_id = ?", productId).
+		Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return productSetting, nil
+}
+
+func GetProductSettingById(id int64, ctx context.Context) (*ProductSetting, error) {
 	productSetting := new(ProductSetting)
 	err := db.Client.NewSelect().
 		Model(productSetting).
