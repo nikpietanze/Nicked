@@ -64,6 +64,7 @@ func Scrape() {
 		}
 
 		lastPrice := product.Prices[len(product.Prices)-1]
+        product.Prices = append(product.Prices, price)
 
 		_, err = models.CreatePrice(price, ctx)
 		if err != nil {
