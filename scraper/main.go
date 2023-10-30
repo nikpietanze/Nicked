@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/url"
 	"strings"
@@ -26,8 +27,23 @@ func Init() {
 	_, err := s.Every(10).Minutes().Do(Scrape)
 	if err != nil {
 		log.Println(err)
+		dp := models.DataPoint{
+			Event:    "nicked_server_error",
+			Location: "scraper_scheduler_error",
+			Details:  err.Error(),
+		}
+		if err := models.CreateDataPoint(&dp, context.Background()); err != nil {
+			log.Println(err)
+		}
 	}
 	s.StartAsync()
+}
+
+func trimName(str string) string {
+    if (len(str) > 35) {
+        return str[0:34] + "..."
+    }
+    return str
 }
 
 func Scrape() {
@@ -35,14 +51,36 @@ func Scrape() {
 
 	products, err := models.GetAllProducts(ctx)
 	if err != nil {
+		dp := models.DataPoint{
+			Event:    "nicked_server_error",
+			Location: "scraper_get_all_products_error",
+			Details:  err.Error(),
+		}
+		if err := models.CreateDataPoint(&dp, context.Background()); err != nil {
+			log.Println(err)
+		}
 		log.Panic(err)
 	}
 
 	for i, product := range products {
-		log.Println("scraping " + product.Name + " " + strconv.FormatInt(int64(i+1), 10) + "/" + strconv.FormatInt(int64(len(products)), 10))
+		log.Println("Scraping " +
+            trimName(product.Name) +
+            " " +
+            strconv.FormatInt(int64(i+1), 10) +
+            "/" +
+            strconv.FormatInt(int64(len(products)), 10))
 
 		url, err := url.Parse(product.Url)
 		if err != nil {
+			dp := models.DataPoint{
+				Event:    "nicked_server_error",
+				Location: "scraper_parse_url_error",
+				Details:  err.Error(),
+				Data1:    fmt.Sprintf("url:%s", url),
+			}
+			if err := models.CreateDataPoint(&dp, context.Background()); err != nil {
+				log.Println(err)
+			}
 			log.Panic(err)
 		}
 
@@ -57,27 +95,41 @@ func Scrape() {
 			price.Amount = p
 		}
 
-		log.Println("price.amount", price.Amount)
-
 		if price.Amount == 0 {
-            break
+			break
 		}
 
 		lastPrice := product.Prices[len(product.Prices)-1]
-        product.Prices = append(product.Prices, price)
+		product.Prices = append(product.Prices, price)
 
 		_, err = models.CreatePrice(price, ctx)
 		if err != nil {
+			dp := models.DataPoint{
+				Event:    "nicked_server_error",
+				Location: "scraper_create_price_error",
+				Details:  err.Error(),
+				Data1:    fmt.Sprintf("productId:%d;price:%v", product.Id, price.Amount),
+			}
+			if err := models.CreateDataPoint(&dp, context.Background()); err != nil {
+				log.Println(err)
+			}
 			log.Panic(err)
 		}
 
 		if !(product.OnSale && price.Amount == lastPrice.Amount) && price.Amount > 0 {
-			log.Println("product not on sale with same price, updating product")
-
 			product.OnSale = price.Amount < lastPrice.Amount
 
 			_, err := models.UpdateProduct(&product, ctx)
 			if err != nil {
+				dp := models.DataPoint{
+					Event:    "nicked_server_error",
+					Location: "scraper_amazon_error",
+					Details:  err.Error(),
+					Data1:    fmt.Sprintf("productId:%d", product.Id),
+				}
+				if err := models.CreateDataPoint(&dp, context.Background()); err != nil {
+					log.Println(err)
+				}
 				log.Panic(err)
 			}
 
@@ -86,6 +138,15 @@ func Scrape() {
 					user := product.Users[i]
 					productSetting, err := models.GetProductSetting(user.Id, product.Id, ctx)
 					if err != nil {
+						dp := models.DataPoint{
+							Event:    "nicked_server_error",
+							Location: "scraper_amazon_error",
+							Details:  err.Error(),
+							Data1:    fmt.Sprintf("userId:%d;productId:%d", user.Id, product.Id),
+						}
+						if err := models.CreateDataPoint(&dp, context.Background()); err != nil {
+							log.Println(err)
+						}
 						log.Panic(err)
 					}
 
@@ -98,92 +159,3 @@ func Scrape() {
 	}
 }
 
-func ScrapeAmazon(url string) (string, float64) {
-	var currency string
-	var price float64
-
-	Scraper.OnHTML("#tmmSwatches span.a-size-base.a-color-price.a-color-price", func(e *colly.HTMLElement) {
-		if strings.Contains(e.Text, "$") {
-			currency = "USD"
-		}
-
-		str := strings.ReplaceAll(e.Text, "$", "")
-		str = strings.ReplaceAll(str, " ", "")
-
-		log.Println("scraping, found " + str)
-
-		flt, _ := strconv.ParseFloat(str, 64)
-
-		if flt > 0 {
-			price = flt
-		}
-	})
-
-	Scraper.OnHTML("#corePrice_desktop .a-price.a-text-price.apexPriceToPay span", func(e *colly.HTMLElement) {
-		if currency == "" && strings.Contains(e.Text, "$") {
-			currency = "USD"
-		}
-
-		str := strings.ReplaceAll(e.Text, "$", "")
-		str = strings.ReplaceAll(str, " ", "")
-
-		log.Println("scraping, found " + str)
-
-		flt, _ := strconv.ParseFloat(str, 64)
-
-		if price <= 0 && flt > 0 {
-			price = flt
-		}
-	})
-
-	Scraper.OnHTML("#corePriceDisplay_desktop_feature_div span.a-price.priceToPay", func(e *colly.HTMLElement) {
-		children := e.DOM.Children()
-
-		sym := children.Find("span.a-price-symbol").Text()
-		if currency == "" && strings.Contains(sym, "$") {
-			currency = "USD"
-		}
-
-		str := children.Find("span.a-price-whole").Text()
-		str += children.Find("span.a-price-fraction").Text()
-
-		log.Println("scraping, found " + str)
-
-		flt, _ := strconv.ParseFloat(str, 64)
-
-		if price <= 0 && flt > 0 {
-			price = flt
-		}
-	})
-
-	if err := Scraper.Visit(url); err != nil {
-		log.Println(err)
-	}
-
-	return currency, price
-}
-
-func ScrapeWayfair(url string) float64 {
-	var price float64
-
-	Scraper.OnHTML(".a-price-whole", func(e *colly.HTMLElement) {
-		flt, err := strconv.ParseFloat(e.Text, 64)
-		if err != nil {
-			log.Println(err)
-		}
-		price = flt
-	})
-
-	Scraper.OnHTML(".a-price-fraction", func(e *colly.HTMLElement) {
-		flt, err := strconv.ParseFloat("0."+e.Text, 64)
-		if err != nil {
-			log.Println(err)
-		}
-		price += flt
-	})
-
-	if err := Scraper.Visit(url); err != nil {
-		log.Println(err)
-	}
-	return price
-}
