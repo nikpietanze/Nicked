@@ -108,9 +108,11 @@ func main() {
 	api.DELETE("/price/:id", apiHandlers.DeletePrice)
 
 	// Scraper
-	scraper.Init()
+	go scraper.Init()
 
 	e.Logger.Fatal(e.Start(":8080"))
+
+
 }
 
 func createSchema(ctx context.Context) error {

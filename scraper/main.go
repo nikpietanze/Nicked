@@ -24,9 +24,9 @@ func Init() {
 	Scraper.AllowURLRevisit = true
 
 	s := gocron.NewScheduler(time.UTC)
-	_, err := s.Every(10).Minutes().Do(Scrape)
+    s.WaitForScheduleAll()
+    _, err := s.Every(1).Day().At("00:00").Do(Scrape)
 	if err != nil {
-		log.Println(err)
 		dp := models.DataPoint{
 			Event:    "nicked_server_error",
 			Location: "scraper_scheduler_error",
@@ -35,18 +35,20 @@ func Init() {
 		if err := models.CreateDataPoint(&dp, context.Background()); err != nil {
 			log.Println(err)
 		}
+		log.Fatalln("error scheduling job", err)
 	}
-	s.StartAsync()
+    s.StartAsync()
 }
 
 func trimName(str string) string {
-    if (len(str) > 35) {
-        return str[0:34] + "..."
-    }
-    return str
+	if len(str) > 35 {
+		return str[0:34] + "..."
+	}
+	return str
 }
 
 func Scrape() {
+	log.Println("starting scraper function")
 	ctx := context.Background()
 
 	products, err := models.GetAllProducts(ctx)
@@ -62,13 +64,15 @@ func Scrape() {
 		log.Panic(err)
 	}
 
+    // TODO: look into making multiple requests simultaneously
+    // using goroutines
 	for i, product := range products {
 		log.Println("Scraping " +
-            trimName(product.Name) +
-            " " +
-            strconv.FormatInt(int64(i+1), 10) +
-            "/" +
-            strconv.FormatInt(int64(len(products)), 10))
+			trimName(product.Name) +
+			" " +
+			strconv.FormatInt(int64(i+1), 10) +
+			"/" +
+			strconv.FormatInt(int64(len(products)), 10))
 
 		url, err := url.Parse(product.Url)
 		if err != nil {
@@ -158,4 +162,3 @@ func Scrape() {
 		}
 	}
 }
-
