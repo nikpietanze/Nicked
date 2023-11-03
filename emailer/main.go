@@ -12,7 +12,7 @@ import (
 	"nicked.io/models"
 )
 
-func SendSaleEmail(recipient string, product models.Product) {
+func SendSaleEmail(recipient string, product *models.Product) {
 	// TODO: currency symbol based on product.Currency
 	price := strconv.FormatFloat(product.Prices[len(product.Prices)-1].Amount, 'f', -1, 64)
 

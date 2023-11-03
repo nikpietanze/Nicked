@@ -8,9 +8,10 @@ import (
 )
 
 func ScrapeWayfair(url string) float64 {
+    c := colly.NewCollector()
 	var price float64
 
-	Scraper.OnHTML(".a-price-whole", func(e *colly.HTMLElement) {
+	c.OnHTML(".a-price-whole", func(e *colly.HTMLElement) {
 		flt, err := strconv.ParseFloat(e.Text, 64)
 		if err != nil {
 			log.Println(err)
@@ -18,7 +19,7 @@ func ScrapeWayfair(url string) float64 {
 		price = flt
 	})
 
-	Scraper.OnHTML(".a-price-fraction", func(e *colly.HTMLElement) {
+	c.OnHTML(".a-price-fraction", func(e *colly.HTMLElement) {
 		flt, err := strconv.ParseFloat("0."+e.Text, 64)
 		if err != nil {
 			log.Println(err)
@@ -26,7 +27,7 @@ func ScrapeWayfair(url string) float64 {
 		price += flt
 	})
 
-	if err := Scraper.Visit(url); err != nil {
+	if err := c.Visit(url); err != nil {
 		log.Println(err)
 	}
 	return price
