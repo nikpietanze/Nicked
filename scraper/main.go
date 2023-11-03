@@ -20,7 +20,7 @@ import (
 func Init() {
 	s := gocron.NewScheduler(time.UTC)
 	s.WaitForScheduleAll()
-	_, err := s.Every(1).Minute().Do(Scrape)
+	_, err := s.Every(1).Minutes().Do(Scrape)
 	if err != nil {
 		dp := models.DataPoint{
 			Event:    "nicked_server_error",
@@ -39,16 +39,18 @@ func Scrape() {
 	c := colly.NewCollector(
 		colly.Async(true),
 		colly.AllowURLRevisit(),
+        colly.MaxBodySize(1024 * 1024 * 1.5),
 	)
-	if err := c.Limit(&colly.LimitRule{Parallelism: 4}); err != nil {
+    if err := c.Limit(&colly.LimitRule{DomainGlob: "*", Parallelism: 16}); err != nil {
 		log.Println(err)
 	}
 	c.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
+    c.DisableCookies()
 
 	ctx := context.Background()
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("visiting", r.URL)
+		log.Println("visiting", r.URL)
 	})
 
 	c.OnHTML("#centerCol", func(e *colly.HTMLElement) {
@@ -59,8 +61,6 @@ func Scrape() {
 
 			str := children.Find("span.a-price-whole").Text()
 			str += children.Find("span.a-price-fraction").Text()
-
-			log.Println("1:", str)
 			flt, _ := strconv.ParseFloat(str, 64)
 
 			if flt > 0 {
@@ -77,8 +77,6 @@ func Scrape() {
 
 				str := children.Find("span.a-price-whole").Text()
 				str += children.Find("span.a-price-fraction").Text()
-
-				log.Println("2:", str)
 				flt, _ := strconv.ParseFloat(str, 64)
 
 				if flt > 0 {
@@ -94,8 +92,6 @@ func Scrape() {
 			e.ForEachWithBreak("#tmmSwatches span.a-size-base.a-color-price.a-color-price", func(_ int, e *colly.HTMLElement) bool {
 				str := strings.ReplaceAll(e.Text, "$", "")
 				str = strings.ReplaceAll(str, " ", "")
-
-				log.Println("3:", str)
 				flt, _ := strconv.ParseFloat(str, 64)
 
 				if flt > 0 {
@@ -111,8 +107,6 @@ func Scrape() {
 			e.ForEachWithBreak("#corePrice_desktop .a-price.a-text-price.apexPriceToPay span", func(_ int, e *colly.HTMLElement) bool {
 				str := strings.ReplaceAll(e.Text, "$", "")
 				str = strings.ReplaceAll(str, " ", "")
-
-				log.Println("4:", str)
 				flt, _ := strconv.ParseFloat(str, 64)
 
 				if flt > 0 {
@@ -128,8 +122,6 @@ func Scrape() {
 			e.ForEachWithBreak("#corePrice_desktop #snsPriceRow #snsDetailPagePrice #sns-base-price", func(_ int, e *colly.HTMLElement) bool {
 				str := strings.ReplaceAll(e.Text, "$", "")
 				str = strings.ReplaceAll(str, " ", "")
-
-				log.Println("5:", str)
 				flt, _ := strconv.ParseFloat(str, 64)
 
 				if flt > 0 {
