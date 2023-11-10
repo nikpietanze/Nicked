@@ -6,19 +6,19 @@ env:
 phases:
   install:
     commands:
+      # install latest version of go
       - wget https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz
       - tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
       - export PATH="/usr/local/go/bin:$PATH" && export GOPATH="$HOME/go" && export PATH="$GOPATH/bin:$PATH"
-      - go get -v -u ***GO_MODULES***
   pre_build:
     commands:
-      - echo Start pre_build...
+      - echo Starting build...
   build:
     commands:
-      - echo Start build...
+      - echo Building...
       - echo $CODEBUILD_SRC_DIR
       - cd $CODEBUILD_SRC_DIR && go build
   post_build:
     commands:
-      - echo Start post_build...
-      - aws s3 cp $CODEBUILD_SRC_DIR/main s3://code.deploy.lightsail.bucket/
+      - echo Build finished...
+        #- aws s3 cp $CODEBUILD_SRC_DIR/nicked.io s3://code.deploy.lightsail.bucket/
