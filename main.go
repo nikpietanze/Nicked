@@ -45,6 +45,7 @@ func main() {
 	// Templates
 	templates := make(map[string]*template.Template)
 	templates["home.html"] = template.Must(template.ParseFiles("views/home.html", "views/layouts/base.html"))
+	templates["contact.html"] = template.Must(template.ParseFiles("views/contact.html", "views/layouts/base.html"))
 	templates["privacy.html"] = template.Must(template.ParseFiles("views/privacy.html", "views/layouts/base.html"))
 	templates["info/sales-and-discounts-tracking/v1.html"] = template.Must(template.ParseFiles("views/info/sales-and-discounts-tracking/v1.html", "views/layouts/base.html"))
 
@@ -56,13 +57,18 @@ func main() {
 	e.Static("/static", "public")
 
 	// Global Middleware
-	//e.Use(middleware.Logger())
+	e.Use(middleware.Logger())
 	e.Use(middleware.CORS())
 
 	// Website Routes
 	e.GET("/", func(c echo.Context) error {
 		return c.Render(http.StatusOK, "home.html", map[string]interface{}{
 			"title": "Nicked",
+		})
+	})
+	e.GET("/contact", func(c echo.Context) error {
+		return c.Render(http.StatusOK, "contact.html", map[string]interface{}{
+			"title": "Contact Us | Nicked",
 		})
 	})
 	e.GET("/privacy", func(c echo.Context) error {
